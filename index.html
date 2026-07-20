@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="我的计划">
+<title>我的计划</title>
+<style>
+:root {
+  --blue: #2563eb; --blue-l: #dbeafe;
+  --green: #059669; --green-l: #d1fae5;
+  --fit: #2563eb; --fit-l: #dbeafe;
+  --eng: #059669; --eng-l: #d1fae5;
+  --amber: #b45309; --amber-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --bg: #f2f2f7; --card: #fff;
+  --text: #1c1c1e; --text2: #3c3c43; --muted: #8e8e93;
+  --border: #e5e5ea; --tab-h: 56px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 44px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,"PingFang SC",sans-serif;background:var(--bg);color:var(--text);font-size:15px}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh}
+
+/* ── Screens ── */
+.screen{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--tab-h) + var(--safe-b) + 16px)}
+.screen.active{display:block}
+
+/* ── Top bar ── */
+.tbar{padding:var(--safe-t) 20px 14px;color:#fff;position:sticky;top:0;z-index:50}
+.tbar.blue{background:var(--blue)} .tbar.green{background:var(--green)}
+.tbar.amber{background:var(--amber)} .tbar.gray{background:#636366}
+.tbar.home{background:linear-gradient(135deg,#1d4ed8,#059669)}
+.tbar h1{font-size:20px;font-weight:700} .tbar p{font-size:13px;opacity:.85;margin-top:2px}
+
+/* ── Sub-tabs ── */
+.stabs{display:flex;background:var(--card);border-bottom:0.5px solid var(--border);overflow-x:auto;position:sticky;top:0;z-index:40}
+.stab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;font-family:inherit}
+.stab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.stab.eng.active{color:var(--green);border-bottom-color:var(--green)}
+.subpanel{display:none;padding:16px} .subpanel.active{display:block}
+
+/* ── Bottom tab bar ── */
+.tabbar{position:fixed;bottom:0;left:0;right:0;height:calc(var(--tab-h) + var(--safe-b));background:rgba(249,249,249,.92);border-top:.5px solid var(--border);display:flex;z-index:100;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding-bottom:var(--safe-b)}
+.titem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;cursor:pointer;color:var(--muted);font-family:inherit;padding:0}
+.titem.active{color:var(--blue)} .titem.active.eng{color:var(--green)}
+.ticon{font-size:22px;line-height:1} .tlabel{font-size:10px;font-weight:500}
+
+/* ── Cards & sections ── */
+.sg{padding:0 16px} .sl{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:16px 0 8px}
+.card{background:var(--card);border-radius:16px;overflow:hidden;margin-bottom:12px}
+.cb{padding:14px 16px}
+.divrow{border-bottom:.5px solid var(--border)} .divrow:last-child{border-bottom:none}
+
+/* ── Home dual rings ── */
+.dual-ring{display:flex;gap:12px;align-items:center}
+.ring-wrap{flex:1;display:flex;align-items:center;gap:10px}
+.ring-svg{width:56px;height:56px;flex-shrink:0}
+.rtrack{fill:none;stroke:var(--border);stroke-width:6}
+.rfill-fit{fill:none;stroke:var(--fit);stroke-width:6;stroke-linecap:round;transform:rotate(-90deg);transform-origin:28px 28px;transition:stroke-dashoffset .5s}
+.rfill-eng{fill:none;stroke:var(--eng);stroke-width:6;stroke-linecap:round;transform:rotate(-90deg);transform-origin:28px 28px;transition:stroke-dashoffset .5s}
+.ring-info{flex:1}
+.ring-num{font-size:20px;font-weight:700}
+.ring-label{font-size:12px;color:var(--muted);margin-top:1px}
+.ring-div{width:.5px;background:var(--border);align-self:stretch}
+
+/* ── Checklist ── */
+.exitem{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:.5px solid var(--border);cursor:pointer;user-select:none}
+.exitem:last-child{border-bottom:none}
+.excheck{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s;font-size:13px;color:#fff}
+.exitem.done .excheck{background:var(--green);border-color:var(--green)}
+.exitem.done .exname{text-decoration:line-through;color:var(--muted)}
+.exname{font-size:15px;font-weight:500} .exsets{font-size:12px;color:var(--muted);margin-top:2px}
+.extag{font-size:10px;padding:2px 8px;border-radius:10px;margin-left:auto;flex-shrink:0;font-weight:600}
+.tag-timer{background:var(--blue-l);color:var(--blue)}
+.tag-count{background:var(--eng-l);color:var(--green)}
+
+/* ── Timer & Counter ── */
+.tool-card{background:var(--card);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.tool-inner{padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.tool-display{font-size:42px;font-weight:200;letter-spacing:2px;font-variant-numeric:tabular-nums}
+.tool-label{font-size:12px;color:var(--muted);margin-top:2px}
+.tool-btns{display:flex;gap:10px}
+.tbtn{width:46px;height:46px;border-radius:50%;border:none;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.tbtn-go{background:var(--green);color:#fff}
+.tbtn-rst{background:var(--bg);color:var(--muted)}
+.tbtn-minus{background:var(--red-l);color:var(--red);font-size:22px}
+.tbtn-plus{background:var(--eng-l);color:var(--green);font-size:22px}
+.tbar-prog{height:3px;background:var(--border)}
+.tbar-fill{height:3px;background:var(--green);width:0%;transition:width .5s linear}
+.counter-display{font-size:64px;font-weight:200;text-align:center;padding:20px 0 8px;letter-spacing:-2px}
+.counter-sub{text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px}
+.counter-tap{width:100%;padding:20px;background:var(--eng-l);border:none;border-radius:0 0 16px 16px;font-size:17px;font-weight:600;color:var(--green);cursor:pointer;font-family:inherit;active:opacity:.7}
+
+/* ── Monthly calendar ── */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-nav{width:34px;height:34px;border-radius:50%;border:none;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.cal-title{font-size:16px;font-weight:700}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dayname{text-align:center;font-size:11px;color:var(--muted);padding:4px 0;font-weight:500}
+.cal-cell{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border:none;background:none;font-family:inherit}
+.cal-cell.has-date{color:var(--text)}
+.cal-cell.trained{background:var(--fit);color:#fff}
+.cal-cell.trained-eng{background:var(--eng);color:#fff}
+.cal-cell.trained-both{background:linear-gradient(135deg,var(--fit),var(--eng));color:#fff}
+.cal-cell.today-cell{outline:2px solid var(--fit);outline-offset:1px}
+.cal-stats{display:flex;gap:10px;margin-top:12px}
+.cal-stat{flex:1;background:var(--bg);border-radius:10px;padding:10px;text-align:center}
+.cal-stat-num{font-size:22px;font-weight:700}
+.cal-stat-label{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── Exercise SVG cards ── */
+.excard{background:var(--card);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.exhead{padding:14px 16px 10px;display:flex;gap:12px;align-items:flex-start}
+.ed-meta{flex:1}
+.edbadge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:4px}
+.edname{font-size:17px;font-weight:700} .edsets{font-size:13px;font-weight:600;margin-top:3px;color:var(--fit)}
+.edsvg{width:96px;height:74px;flex-shrink:0}
+.extip{background:#f9f9f9;padding:11px 16px;font-size:13px;color:#555;line-height:1.65;border-top:.5px solid var(--border)}
+.extip b{color:var(--text)}
+
+/* ── English ── */
+.drill-card{background:var(--card);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.drill-phrase{font-size:22px;font-weight:700;padding:20px 16px 4px;line-height:1.4}
+.drill-phonetic{font-size:14px;color:var(--muted);padding:0 16px 8px}
+.drill-meaning{font-size:14px;color:var(--text2);padding:0 16px 12px;border-bottom:.5px solid var(--border)}
+.drill-tip{font-size:13px;color:#555;padding:10px 16px;line-height:1.6}
+.drill-btns{display:flex;gap:10px;padding:12px 16px}
+.dbtn{flex:1;padding:12px;border-radius:12px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.dbtn-play{background:var(--eng-l);color:var(--green)}
+.dbtn-next{background:var(--eng);color:#fff}
+
+.ai-chat{display:flex;flex-direction:column;gap:10px;padding-bottom:8px}
+.chat-bubble{max-width:85%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.55}
+.bubble-ai{background:var(--card);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px;border:.5px solid var(--border)}
+.bubble-user{background:var(--eng);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.chat-input-row{display:flex;gap:8px;padding:10px 16px;background:var(--card);border-top:.5px solid var(--border);position:sticky;bottom:calc(var(--tab-h) + var(--safe-b));z-index:30}
+.chat-input{flex:1;padding:10px 14px;border-radius:20px;border:1.5px solid var(--border);font-size:14px;font-family:inherit;outline:none;background:var(--bg)}
+.chat-input:focus{border-color:var(--eng)}
+.chat-send{width:40px;height:40px;border-radius:50%;background:var(--eng);color:#fff;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-send:disabled{opacity:.5}
+.chat-mic{width:40px;height:40px;border-radius:50%;background:var(--bg);border:1.5px solid var(--border);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.chat-mic.recording{background:#fee2e2;border-color:var(--red);animation:pulse-mic .8s infinite}
+@keyframes pulse-mic{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.voice-hint{font-size:11px;color:var(--muted);text-align:center;padding:4px 0 0;display:none}
+.voice-hint.show{display:block}
+.typing-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+/* ── Plan weeks ── */
+.wtabs{display:flex;gap:8px;flex-wrap:wrap;padding:4px 0 12px}
+.wtab{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:transparent;font-size:13px;color:var(--muted);font-family:inherit;cursor:pointer}
+.wtab.active{background:var(--fit);color:#fff;border-color:var(--fit);font-weight:600}
+.prog-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:8px 0 4px}
+.prog-fill{height:6px;border-radius:3px;transition:width .4s}
+.planitem{display:flex;gap:10px;padding:9px 0;border-bottom:.5px solid var(--border);font-size:13px;color:#444;align-items:flex-start}
+.planitem:last-child{border-bottom:none}
+.pldot{flex-shrink:0;margin-top:1px}
+
+/* ── Diet ── */
+.meal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.meal-card{background:#f9f9f9;border-radius:12px;padding:12px;border:.5px solid var(--border)}
+.mtime{font-size:11px;color:var(--muted);margin-bottom:3px}
+.mname{font-size:13px;font-weight:700;margin-bottom:5px}
+.mitem{font-size:12px;color:#555;padding:2px 0}
+.mitem::before{content:"·  "}
+.tipbox{background:var(--blue-l);border-radius:12px;padding:12px 14px;font-size:13px;color:#1e40af;line-height:1.6;margin-bottom:12px}
+.warnbox{background:var(--amber-l);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--amber);line-height:1.6;margin-bottom:12px}
+.prow{display:flex;gap:10px;padding:12px 0;border-bottom:.5px solid var(--border)}
+.prow:last-child{border-bottom:none}
+.picon{font-size:20px;flex-shrink:0}
+.ptitle{font-size:14px;font-weight:600;margin-bottom:2px}
+.pdesc{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ── Settings ── */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:.5px solid var(--border);cursor:pointer}
+.set-row:last-child{border-bottom:none}
+.set-label{font-size:15px}
+.set-val{font-size:14px;color:var(--muted)}
+.set-arrow{color:var(--muted);font-size:13px}
+.dev-zone{background:#1c1c1e;border-radius:16px;padding:16px;margin-bottom:12px}
+.dev-title{color:#30d158;font-size:13px;font-weight:700;margin-bottom:8px;font-family:monospace}
+.dev-desc{color:#98989d;font-size:12px;line-height:1.6;margin-bottom:12px;font-family:monospace}
+.dev-textarea{width:100%;height:180px;background:#2c2c2e;color:#f2f2f7;border:1px solid #3a3a3c;border-radius:10px;padding:12px;font-size:12px;font-family:monospace;resize:vertical;outline:none}
+.dev-textarea:focus{border-color:#30d158}
+.dev-btn{width:100%;padding:12px;background:#30d158;color:#000;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px}
+.plugin-output{margin-top:12px}
+
+/* ── English study plan ── */
+.eng-week{background:var(--card);border-radius:16px;margin-bottom:10px;overflow:hidden}
+.eng-week-head{padding:14px 16px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.eng-week-num{width:32px;height:32px;border-radius:50%;background:var(--eng);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.eng-week-title{font-size:15px;font-weight:600;flex:1}
+.eng-week-body{padding:0 16px 14px;display:none}
+.eng-week-body.open{display:block}
+.eng-task{display:flex;gap:8px;padding:7px 0;border-bottom:.5px solid var(--border);font-size:13px;color:var(--text2)}
+.eng-task:last-child{border-bottom:none}
+.eng-task-dot{color:var(--eng);flex-shrink:0}
+
+/* ── Utility ── */
+.btn-primary{width:100%;padding:14px;border-radius:14px;background:var(--fit);color:#fff;border:none;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:10px}
+.btn-green{background:var(--green)}
+.pb{height:20px}
+.badge-chest{background:var(--blue-l);color:var(--blue)}
+.badge-abs{background:var(--eng-l);color:var(--green)}
+.badge-cardio{background:var(--amber-l);color:var(--amber)}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══════════════ 首页 ══════════════ -->
+<div class="screen active" id="s-home">
+  <div class="tbar home">
+    <h1 id="home-title">💪 今日计划</h1>
+    <p id="home-date">加载中...</p>
+  </div>
+  <div class="sg">
+    <div class="sl">今日进度</div>
+    <div class="card cb">
+      <div class="dual-ring">
+        <div class="ring-wrap">
+          <svg class="ring-svg" viewBox="0 0 56 56">
+            <circle class="rtrack" cx="28" cy="28" r="22"/>
+            <circle class="rfill-fit" id="ring-fit" cx="28" cy="28" r="22" stroke-dasharray="138" stroke-dashoffset="138"/>
+          </svg>
+          <div class="ring-info">
+            <div class="ring-num" id="fit-ring-num" style="color:var(--fit)">0/6</div>
+            <div class="ring-label">健身本周</div>
+          </div>
+        </div>
+        <div class="ring-div"></div>
+        <div class="ring-wrap">
+          <svg class="ring-svg" viewBox="0 0 56 56">
+            <circle class="rtrack" cx="28" cy="28" r="22"/>
+            <circle class="rfill-eng" id="ring-eng" cx="28" cy="28" r="22" stroke-dasharray="138" stroke-dashoffset="138"/>
+          </svg>
+          <div class="ring-info">
+            <div class="ring-num" id="eng-ring-num" style="color:var(--eng)">0/7</div>
+            <div class="ring-label">英语本周</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sl">今日健身</div>
+    <div class="card" id="home-fit-list"></div>
+    <button class="btn-primary" onclick="markFitDone()">✓ 完成今天健身</button>
+
+    <div class="sl">今日英语</div>
+    <div class="card" id="home-eng-tasks">
+      <div class="exitem" id="eng-task-1" onclick="toggleEngTask(0)">
+        <div class="excheck" id="eng-check-0"></div>
+        <div class="exinfo">
+          <div class="exname">跟读练习</div>
+          <div class="exsets">练习今日口语句型，跟读 3 遍</div>
+        </div>
+      </div>
+      <div class="exitem" id="eng-task-2" onclick="toggleEngTask(1)">
+        <div class="excheck" id="eng-check-1"></div>
+        <div class="exinfo">
+          <div class="exname">AI 陪练对话</div>
+          <div class="exsets">和 AI 进行 5 轮日常口语对话</div>
+        </div>
+      </div>
+      <div class="exitem" id="eng-task-3" onclick="toggleEngTask(2)">
+        <div class="excheck" id="eng-check-2"></div>
+        <div class="exinfo">
+          <div class="exname">今日单词</div>
+          <div class="exsets">掌握今日 5 个高频口语词</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary btn-green" onclick="markEngDone()">✓ 完成今天英语</button>
+  </div>
+  <div class="pb"></div>
+</div>
+
+<!-- ══════════════ 健身 ══════════════ -->
+<div class="screen" id="s-fit">
+  <div class="tbar blue"><h1>健身训练</h1><p>居家无器械 · 5周递进计划</p></div>
+  <div class="stabs">
+    <button class="stab active" onclick="fitTab('today',this)">今日动作</button>
+    <button class="stab" onclick="fitTab('tools',this)">计时 / 计数</button>
+    <button class="stab" onclick="fitTab('exercises',this)">动作图解</button>
+    <button class="stab" onclick="fitTab('plan',this)">5周计划</button>
+    <button class="stab" onclick="fitTab('calendar',this)">打卡月历</button>
+  </div>
+
+  <!-- 今日动作 -->
+  <div class="subpanel active" id="fit-today">
+    <div class="card" id="fit-ex-list"></div>
+    <button class="btn-primary" onclick="markFitDone()">✓ 标记今天完成</button>
+    <div class="pb"></div>
+  </div>
+
+  <!-- 计时 / 计数 -->
+  <div class="subpanel" id="fit-tools">
+    <p style="font-size:13px;font-weight:600;color:var(--muted);padding-bottom:10px;text-transform:uppercase;letter-spacing:.04em">倒计时器（平板支撑等）</p>
+    <div class="tool-card">
+      <div class="tool-inner">
+        <div>
+          <div class="tool-display" id="timer-disp">01:00</div>
+          <div class="tool-label">组间休息 / 静态动作计时</div>
+        </div>
+        <div class="tool-btns">
+          <button class="tbtn tbtn-rst" onclick="resetTimer()">↺</button>
+          <button class="tbtn tbtn-go" id="timer-btn" onclick="toggleTimer()">▶</button>
+        </div>
+      </div>
+      <div class="tbar-prog"><div class="tbar-fill" id="timer-prog"></div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button onclick="setTimerDur(30)" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);font-size:13px;cursor:pointer;font-family:inherit">30秒</button>
+      <button onclick="setTimerDur(45)" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);font-size:13px;cursor:pointer;font-family:inherit">45秒</button>
+      <button onclick="setTimerDur(60)" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--blue);background:var(--blue-l);font-size:13px;cursor:pointer;font-family:inherit;color:var(--blue);font-weight:600">60秒</button>
+      <button onclick="setTimerDur(90)" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);font-size:13px;cursor:pointer;font-family:inherit">90秒</button>
+    </div>
+
+    <p style="font-size:13px;font-weight:600;color:var(--muted);padding-bottom:10px;text-transform:uppercase;letter-spacing:.04em">计数器（卷腹 / 腿举等）</p>
+    <div class="tool-card">
+      <div class="counter-display" id="counter-num">0</div>
+      <div class="counter-sub" id="counter-sub">第 1 组 · 目标 15 个</div>
+      <div style="display:flex;padding:0 16px 14px;gap:10px">
+        <button class="tbtn tbtn-minus" onclick="counterChange(-1)" style="flex:1;border-radius:12px;width:auto;height:44px">－</button>
+        <button class="tbtn tbtn-rst" onclick="resetCounter()" style="flex:1;border-radius:12px;width:auto;height:44px;font-size:13px">重置</button>
+        <button onclick="nextSet()" style="flex:1;border-radius:12px;border:none;background:var(--blue-l);color:var(--blue);font-size:13px;font-weight:600;cursor:pointer;height:44px;font-family:inherit">下一组</button>
+      </div>
+      <button class="counter-tap" onclick="counterChange(1)">点击计数 +1</button>
+    </div>
+    <div class="pb"></div>
+  </div>
+
+  <!-- 动作图解 -->
+  <div class="subpanel" id="fit-exercises">
+    <p style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em">胸肌训练</p>
+
+    <div class="excard">
+      <div class="exhead">
+        <div class="ed-meta"><div class="edbadge badge-chest">胸肌</div><div class="edname">标准俯卧撑</div><div class="edsets">3组×12个</div></div>
+        <svg class="edsvg" viewBox="0 0 96 74">
+          <circle cx="18" cy="10" r="6" fill="#2563eb"/>
+          <line x1="18" y1="16" x2="18" y2="32" stroke="#2563eb" stroke-width="2.5"/>
+          <line x1="18" y1="20" x2="6" y2="28" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="6" cy="30" r="3" fill="#2563eb"/>
+          <line x1="18" y1="20" x2="30" y2="28" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="30" cy="30" r="3" fill="#2563eb"/>
+          <line x1="18" y1="32" x2="12" y2="44" stroke="#2563eb" stroke-width="2.5"/>
+          <line x1="18" y1="32" x2="24" y2="44" stroke="#2563eb" stroke-width="2.5"/>
+          <text x="38" y="12" font-size="9" fill="#2563eb" font-weight="600">准备</text>
+          <text x="38" y="23" font-size="8" fill="#666">手与肩同宽</text>
+          <circle cx="66" cy="38" r="5" fill="#059669"/>
+          <line x1="66" y1="43" x2="80" y2="48" stroke="#059669" stroke-width="2.5"/>
+          <line x1="66" y1="43" x2="52" y2="48" stroke="#059669" stroke-width="2.5"/>
+          <circle cx="80" cy="49" r="3" fill="#059669"/>
+          <circle cx="52" cy="49" r="3" fill="#059669"/>
+          <text x="38" y="65" font-size="9" fill="#059669" font-weight="600">下降2秒</text>
+        </svg>
+      </div>
+      <div class="extip"><b>要点：</b>下降时胸贴近地面，全程收紧腹部。背部保持一条直线，臀不要翘也不要塌。<b>下降 2 秒，推起 1 秒。</b></div>
+    </div>
+
+    <div class="excard">
+      <div class="exhead">
+        <div class="ed-meta"><div class="edbadge badge-chest">胸肌</div><div class="edname">宽距俯卧撑</div><div class="edsets">3组×10个</div></div>
+        <svg class="edsvg" viewBox="0 0 96 74">
+          <circle cx="48" cy="14" r="6" fill="#2563eb"/>
+          <line x1="48" y1="20" x2="48" y2="36" stroke="#2563eb" stroke-width="2.5"/>
+          <line x1="48" y1="24" x2="10" y2="35" stroke="#2563eb" stroke-width="2.5"/>
+          <circle cx="8" cy="37" r="4" fill="#2563eb"/>
+          <line x1="48" y1="24" x2="86" y2="35" stroke="#2563eb" stroke-width="2.5"/>
+          <circle cx="88" cy="37" r="4" fill="#2563eb"/>
+          <line x1="12" y1="44" x2="84" y2="44" stroke="#dc2626" stroke-width="1" stroke-dasharray="3,2"/>
+          <text x="30" y="42" font-size="8" fill="#dc2626">比肩宽一掌</text>
+          <text x="28" y="66" font-size="8" fill="#666">胸外侧受力更多</text>
+        </svg>
+      </div>
+      <div class="extip"><b>要点：</b>双手间距比肩宽约一个拳头，感受胸大肌外侧拉伸。<b>下降时肘向外打开，</b>不要向后夹。</div>
+    </div>
+
+    <div class="excard">
+      <div class="exhead">
+        <div class="ed-meta"><div class="edbadge badge-chest">胸肌</div><div class="edname">钻石俯卧撑</div><div class="edsets">3组×8个</div></div>
+        <svg class="edsvg" viewBox="0 0 96 74">
+          <circle cx="48" cy="12" r="6" fill="#7c3aed"/>
+          <line x1="48" y1="18" x2="48" y2="34" stroke="#7c3aed" stroke-width="2.5"/>
+          <line x1="48" y1="22" x2="37" y2="32" stroke="#7c3aed" stroke-width="2.5"/>
+          <line x1="48" y1="22" x2="59" y2="32" stroke="#7c3aed" stroke-width="2.5"/>
+          <polygon points="48,28 41,34 48,40 55,34" fill="none" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="30" y="51" font-size="8" fill="#dc2626">拇指食指相触</text>
+          <text x="25" y="68" font-size="8" fill="#666">练胸中缝＋三头肌</text>
+        </svg>
+      </div>
+      <div class="extip"><b>要点：</b>双手拇指和食指相触组成菱形，放在胸口正下方。下降时感受<b>胸中缝夹紧，</b>肘向后贴近身体侧面。</div>
+    </div>
+
+    <p style="font-size:13px;font-weight:600;color:var(--muted);margin:4px 0 12px;text-transform:uppercase;letter-spacing:.04em">腹肌训练</p>
+
+    <div class="excard">
+      <div class="exhead">
+        <div class="ed-meta"><div class="edbadge badge-abs">腹肌</div><div class="edname">卷腹</div><div class="edsets">3组×15个</div></div>
+        <svg class="edsvg" viewBox="0 0 96 74">
+          <line x1="5" y1="54" x2="91" y2="54" stroke="#e5e5ea" stroke-width="1.5"/>
+          <circle cx="15" cy="47" r="5" fill="#059669"/>
+          <path d="M15,52 Q32,51 48,52 Q58,51 62,52" stroke="#059669" stroke-width="2.5" fill="none"/>
+          <line x1="62" y1="52" x2="77" y2="44" stroke="#059669" stroke-width="2.5"/>
+          <circle cx="62" cy="20" r="5" fill="#dc2626"/>
+          <path d="M62,25 Q70,22 74,26" stroke="#dc2626" stroke-width="2.5" fill="none"/>
+          <line x1="74" y1="26" x2="82" y2="28" stroke="#dc2626" stroke-width="2.5"/>
+          <line x1="62" y1="25" x2="44" y2="33" stroke="#dc2626" stroke-width="2.5"/>
+          <text x="2" y="63" font-size="8" fill="#059669">起始：腰贴地</text>
+          <text x="42" y="14" font-size="8" fill="#dc2626">仅抬肩胛骨</text>
+        </svg>
+      </div>
+      <div class="extip"><b>要点：</b>只需抬起肩胛骨，<b>下背部始终贴地。</b>双手轻放耳侧，不要用手扯脖子。呼气上卷，吸气缓慢还原。</div>
+    </div>
+
+    <div class="excard">
+      <div class="exhead">
+        <div class="ed-meta"><div class="edbadge badge-abs">腹肌</div><div class="edname">腿部举起</div><div class="edsets">3组×12个</div></div>
+        <svg class="edsvg" viewBox="0 0 96 74">
+          <line x1="5" y1="57" x2="91" y2="57" stroke="#e5e5ea" stroke-width="1.5"/>
+          <circle cx="82" cy="50" r="5" fill="#059669"/>
+          <line x1="82" y1="55" x2="10" y2="55" stroke="#059669" stroke-width="3"/>
+          <line x1="32" y1="55" x2="16" y2="26" stroke="#dc2626" stroke-width="2.5"/>
+          <line x1="22" y1="55" x2="6" y2="26" stroke="#dc2626" stroke-width="2.5"/>
+          <line x1="6" y1="26" x2="16" y2="26" stroke="#dc2626" stroke-width="2"/>
+          <path d="M11,40 L9,29 L15,33" fill="#dc2626" opacity=".8"/>
+          <text x="36" y="62" font-size="8" fill="#888">腰椎全程贴地</text>
+          <text x="36" y="70" font-size="8" fill="#dc2626">腿不完全放下</text>
+        </svg>
+      </div>
+      <div class="extip"><b>要点：</b>腰椎始终压紧地面。双腿下落时<b>不要完全放到地上，</b>保持腹肌持续紧张。速度越慢效果越好。</div>
+    </div>
+
+    <div class="excard">
+      <div class="exhead">
+        <div class="ed-meta"><div class="edbadge badge-abs">核心</div><div class="edname">平板支撑</div><div class="edsets">3组×30秒</div></div>
+        <svg class="edsvg" viewBox="0 0 96 74">
+          <line x1="5" y1="60" x2="91" y2="60" stroke="#e5e5ea" stroke-width="1.5"/>
+          <circle cx="76" cy="28" r="6" fill="#059669"/>
+          <line x1="76" y1="34" x2="22" y2="46" stroke="#059669" stroke-width="3"/>
+          <line x1="22" y1="46" x2="10" y2="59" stroke="#059669" stroke-width="2.5"/>
+          <line x1="76" y1="46" x2="84" y2="59" stroke="#059669" stroke-width="2.5"/>
+          <circle cx="65" cy="51" r="3" fill="#059669"/>
+          <line x1="16" y1="33" x2="82" y2="33" stroke="#059669" stroke-width="1" stroke-dasharray="3,2" opacity=".5"/>
+          <text x="16" y="30" font-size="7" fill="#059669">一条直线</text>
+          <text x="20" y="12" font-size="7" fill="#dc2626">✕ 臀不能翘起</text>
+          <text x="8" y="68" font-size="8" fill="#888">肘在肩正下方，收腹收臀</text>
+        </svg>
+      </div>
+      <div class="extip"><b>要点：</b>肘关节在肩膀正下方，<b>身体从头到脚保持一条直线。</b>臀不能翘起也不能下塌。均匀呼吸，核心持续收紧。</div>
+    </div>
+
+    <p style="font-size:13px;font-weight:600;color:var(--muted);margin:4px 0 12px;text-transform:uppercase;letter-spacing:.04em">有氧燃脂</p>
+
+    <div class="excard">
+      <div class="exhead">
+        <div class="ed-meta"><div class="edbadge badge-cardio">有氧</div><div class="edname">自行车卷腹</div><div class="edsets">3组×16次</div></div>
+        <svg class="edsvg" viewBox="0 0 96 74">
+          <line x1="5" y1="60" x2="91" y2="60" stroke="#e5e5ea" stroke-width="1.5"/>
+          <circle cx="79" cy="38" r="5" fill="#b45309"/>
+          <line x1="79" y1="43" x2="32" y2="51" stroke="#b45309" stroke-width="2.5"/>
+          <line x1="32" y1="51" x2="16" y2="41" stroke="#b45309" stroke-width="2"/>
+          <circle cx="14" cy="39" r="3.5" fill="#b45309"/>
+          <line x1="32" y1="51" x2="9" y2="58" stroke="#b45309" stroke-width="2.5"/>
+          <line x1="32" y1="51" x2="47" y2="36" stroke="#b45309" stroke-width="2.5"/>
+          <line x1="47" y1="36" x2="40" y2="26" stroke="#b45309" stroke-width="2"/>
+          <text x="32" y="18" font-size="7" fill="#dc2626">肘碰对侧膝</text>
+          <text x="8" y="68" font-size="8" fill="#888">左右交替，慢速有控制</text>
+        </svg>
+      </div>
+      <div class="extip"><b>要点：</b>左右交替，<b>肘碰对侧膝时停顿一秒。</b>慢速做才有效，不要抢速度。一左一右算 2 次。</div>
+    </div>
+
+    <div class="excard">
+      <div class="exhead">
+        <div class="ed-meta"><div class="edbadge badge-cardio">燃脂</div><div class="edname">波比跳</div><div class="edsets">3组×8个</div></div>
+        <svg class="edsvg" viewBox="0 0 96 74">
+          <circle cx="12" cy="10" r="4" fill="#2563eb"/>
+          <line x1="12" y1="14" x2="12" y2="26" stroke="#2563eb" stroke-width="2"/>
+          <line x1="12" y1="18" x2="7" y2="22" stroke="#2563eb" stroke-width="1.5"/>
+          <line x1="12" y1="18" x2="17" y2="22" stroke="#2563eb" stroke-width="1.5"/>
+          <line x1="12" y1="26" x2="9" y2="34" stroke="#2563eb" stroke-width="1.5"/>
+          <line x1="12" y1="26" x2="15" y2="34" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="5" y="40" font-size="7" fill="#2563eb">①站立</text>
+          <text x="20" y="21" font-size="9" fill="#aaa">→</text>
+          <circle cx="38" cy="20" r="4" fill="#7c3aed"/>
+          <line x1="38" y1="24" x2="38" y2="30" stroke="#7c3aed" stroke-width="2"/>
+          <line x1="38" y1="26" x2="31" y2="31" stroke="#7c3aed" stroke-width="1.5"/>
+          <circle cx="30" cy="32" r="2.5" fill="#7c3aed"/>
+          <line x1="38" y1="26" x2="45" y2="31" stroke="#7c3aed" stroke-width="1.5"/>
+          <circle cx="46" cy="32" r="2.5" fill="#7c3aed"/>
+          <text x="30" y="44" font-size="7" fill="#7c3aed">②撑地</text>
+          <text x="48" y="29" font-size="9" fill="#aaa">→</text>
+          <circle cx="68" cy="28" r="4" fill="#059669"/>
+          <line x1="68" y1="32" x2="54" y2="38" stroke="#059669" stroke-width="2"/>
+          <circle cx="53" cy="39" r="2.5" fill="#059669"/>
+          <line x1="68" y1="32" x2="82" y2="37" stroke="#059669" stroke-width="1.5"/>
+          <circle cx="83" cy="38" r="2.5" fill="#059669"/>
+          <text x="58" y="54" font-size="7" fill="#059669">③俯卧撑</text>
+          <circle cx="48" cy="60" r="4" fill="#dc2626"/>
+          <path d="M45,53 L48,58 L51,53" fill="#dc2626" opacity=".8"/>
+          <text x="54" y="67" font-size="7" fill="#dc2626">④跳起</text>
+        </svg>
+      </div>
+      <div class="extip"><b>要点：</b>① 站立 → ② 蹲撑地 → ③ 跳腿+俯卧撑 → ④ 收腿跳起。初期可<b>省略跳起</b>降低强度。</div>
+    </div>
+
+    <div class="pb"></div>
+  </div>
+
+  <!-- 5周计划 -->
+  <div class="subpanel" id="fit-plan">
+    <div class="wtabs" id="week-tabs"></div>
+    <div class="prog-bar"><div class="prog-fill" id="plan-prog" style="width:20%;background:var(--fit)"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin:4px 0 10px">
+      <span id="plan-label">第 1 周 — 基础适应期</span><span id="plan-frac">1/5</span>
+    </div>
+    <div class="card cb" id="plan-note" style="font-size:13px;color:#1e40af;background:var(--blue-l);border:none;margin-bottom:12px"></div>
+    <div id="plan-content"></div>
+    <div class="pb"></div>
+  </div>
+
+  <!-- 打卡月历 -->
+  <div class="subpanel" id="fit-calendar">
+    <div class="card cb">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="calMove(-1)">‹</button>
+        <div class="cal-title" id="cal-title"></div>
+        <button class="cal-nav" onclick="calMove(1)">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-stats">
+        <div class="cal-stat">
+          <div class="cal-stat-num" id="cal-fit-count" style="color:var(--fit)">0</div>
+          <div class="cal-stat-label">健身天数</div>
+        </div>
+        <div class="cal-stat">
+          <div class="cal-stat-num" id="cal-eng-count" style="color:var(--eng)">0</div>
+          <div class="cal-stat-label">英语天数</div>
+        </div>
+        <div class="cal-stat">
+          <div class="cal-stat-num" id="cal-both-count" style="color:var(--purple)">0</div>
+          <div class="cal-stat-label">双打卡</div>
+        </div>
+      </div>
+    </div>
+    <div class="tipbox">💡 点击日期可以手动补打卡，蓝色=健身，绿色=英语，渐变=双打卡</div>
+    <div class="pb"></div>
+  </div>
+</div>
+
+<!-- ══════════════ 英语 ══════════════ -->
+<div class="screen" id="s-eng">
+  <div class="tbar green"><h1>英语学习</h1><p>口语为核心 · 跟读 + AI陪练</p></div>
+  <div class="stabs">
+    <button class="stab eng active" onclick="engTab('drill',this)">跟读练习</button>
+    <button class="stab eng" onclick="engTab('ai',this)">AI 陪练</button>
+    <button class="stab eng" onclick="engTab('engplan',this)">学习计划</button>
+  </div>
+
+  <!-- 跟读 -->
+  <div class="subpanel active" id="eng-drill">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">今日口语句型</div>
+      <div style="font-size:12px;color:var(--eng)" id="drill-progress">1 / 6</div>
+    </div>
+    <div class="drill-card" id="drill-card">
+      <div class="drill-phrase" id="drill-phrase">How's it going?</div>
+      <div class="drill-phonetic" id="drill-phonetic">/haʊz ɪt ˈɡoʊɪŋ/</div>
+      <div class="drill-meaning" id="drill-meaning">最近怎么样？/ 一切还好吗？</div>
+      <div class="drill-tip" id="drill-tip">
+        <b>使用场景：</b>见到朋友或同事时的日常问候，比 "How are you" 更口语化。<br>
+        <b>常见回答：</b>"Pretty good, thanks!" / "Not bad, you?" / "Couldn't be better!"<br>
+        <b>跟读要点：</b>语调先升后降，"going" 轻读，整句连读流畅。
+      </div>
+      <div class="drill-btns">
+        <button class="dbtn dbtn-play" onclick="speakPhrase()">🔊 朗读</button>
+        <button class="dbtn dbtn-next" onclick="nextDrill()">下一句 →</button>
+      </div>
+    </div>
+    <div class="card">
+      <div style="padding:14px 16px 8px;font-size:14px;font-weight:600">今日单词卡</div>
+      <div id="word-list"></div>
+    </div>
+    <div class="pb"></div>
+  </div>
+
+  <!-- AI 陪练 -->
+  <div class="subpanel" id="eng-ai" style="padding:0">
+    <div style="padding:12px 16px 0">
+      <div class="tipbox" style="margin-bottom:10px">🤖 <b>AI 陪练模式：</b>用英语和 AI 对话，AI 会自动纠正你的语法和表达，并给出更地道的说法。每次对话会引导你练习新句型。</div>
+    </div>
+    <div style="padding:0 16px;min-height:200px" id="chat-messages">
+      <div class="ai-chat" id="chat-list">
+        <div class="chat-bubble bubble-ai">Hi there! 👋 I'm your English practice partner. Let's have a conversation to help improve your spoken English.<br><br>I'll correct any mistakes naturally and suggest more native-sounding expressions. Don't worry about making errors — that's how we learn!<br><br><b>Let's start:</b> Can you tell me about your typical day? What do you usually do in the morning?</div>
+      </div>
+    </div>
+    <div style="position:sticky;bottom:calc(var(--tab-h) + var(--safe-b));z-index:30;background:var(--card);border-top:.5px solid var(--border)">
+      <div class="chat-input-row" style="border-top:none">
+        <button class="chat-mic" id="mic-btn" onclick="toggleVoice()" title="按住说话">🎤</button>
+        <input class="chat-input" id="chat-input" type="text" placeholder="开口说 或 打字输入..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="chat-send" id="chat-send-btn" onclick="sendChat()">↑</button>
+      </div>
+      <div class="voice-hint" id="voice-hint">🔴 正在听... 说完后点麦克风停止</div>
+    </div>
+    <div class="pb"></div>
+  </div>
+
+  <!-- 学习计划 -->
+  <div class="subpanel" id="eng-engplan">
+    <div class="tipbox">目标：<b>能流畅看懂英文影视，日常口语对话自信开口。</b>以口语为核心，配合听力输入，8周系统提升。</div>
+
+    <div id="eng-plan-list"></div>
+    <div class="pb"></div>
+  </div>
+</div>
+
+<!-- ══════════════ 饮食 ══════════════ -->
+<div class="screen" id="s-diet">
+  <div class="tbar amber"><h1>饮食方案</h1><p>减脂 70% 靠吃，30% 靠练</p></div>
+  <div class="sg">
+    <div class="sl">每日热量分配</div>
+    <div class="card cb">
+      <div style="display:flex;border-radius:6px;overflow:hidden;height:12px;margin-bottom:8px">
+        <div style="width:35%;background:var(--blue)"></div>
+        <div style="width:40%;background:var(--green)"></div>
+        <div style="width:25%;background:var(--amber)"></div>
+      </div>
+      <div style="display:flex;gap:14px;font-size:12px">
+        <span style="color:var(--blue)">● 蛋白质 35%</span>
+        <span style="color:var(--green)">● 碳水 40%</span>
+        <span style="color:var(--amber)">● 脂肪 25%</span>
+      </div>
+    </div>
+    <div class="tipbox">每日热量缺口约 300–400 kcal，减脂同时保留肌肉。<b>不少于 1400 kcal / 天。</b></div>
+    <div class="sl">一日四餐</div>
+    <div class="meal-grid">
+      <div class="meal-card"><div class="mtime">早餐 7:00–8:00</div><div class="mname">🌅 高蛋白启动</div><div class="mitem">水煮蛋 2 个</div><div class="mitem">燕麦/全麦面包</div><div class="mitem">低脂牛奶/豆浆</div><div class="mitem">苹果/香蕉</div></div>
+      <div class="meal-card"><div class="mtime">午餐 12:00–13:00</div><div class="mname">☀️ 饱腹补能</div><div class="mitem">鸡胸/瘦牛肉 150g</div><div class="mitem">杂粮饭/红薯</div><div class="mitem">深色蔬菜</div><div class="mitem">少油少盐</div></div>
+      <div class="meal-card"><div class="mtime">训练前 20:30</div><div class="mname">⚡ 训前补能</div><div class="mitem">香蕉 1 根</div><div class="mitem">或全麦饼干少量</div><div class="mitem">不空腹训练</div><div class="mitem">不吃太撑</div></div>
+      <div class="meal-card"><div class="mtime">训练后 22:00前</div><div class="mname">🔧 促进恢复</div><div class="mitem">鸡蛋 1–2 个</div><div class="mitem">或希腊酸奶</div><div class="mitem">少量坚果</div><div class="mitem">避免碳水</div></div>
+    </div>
+    <div class="sl">核心原则</div>
+    <div class="card cb">
+      <div class="prow"><div class="picon">💪</div><div><div class="ptitle">蛋白质优先，每公斤体重 1.5–2g</div><div class="pdesc">鸡胸、鸡蛋、豆腐、希腊酸奶，每餐都要有蛋白质来源。</div></div></div>
+      <div class="prow"><div class="picon">🌾</div><div><div class="ptitle">碳水选低 GI，避免精制糖</div><div class="pdesc">燕麦、红薯、糙米替代白米白面。奶茶和甜饮料是最大敌人。</div></div></div>
+      <div class="prow"><div class="picon">💧</div><div><div class="ptitle">每天喝水 2000ml 以上</div><div class="pdesc">训练日多补 500ml，主动喝水，代谢速度明显提升。</div></div></div>
+      <div class="prow"><div class="picon">🚫</div><div><div class="ptitle">三个要控制的习惯</div><div class="pdesc">夜宵、高盐食物（容易浮肿）、酒精（阻碍脂肪代谢）。</div></div></div>
+    </div>
+    <div class="warnbox">⏰ <b>晚练后：</b>练完 1 小时内吃蛋白质，10:30 前洗澡上床。睡眠才是肌肉生长的关键，睡不好等于白练。</div>
+  </div>
+  <div class="pb"></div>
+</div>
+
+<!-- ══════════════ 设置 ══════════════ -->
+<div class="screen" id="s-settings">
+  <div class="tbar gray"><h1>设置</h1><p>偏好 · 开发者模式</p></div>
+  <div class="sg">
+    <div class="sl">偏好设置</div>
+    <div class="card">
+      <div class="set-row" onclick="setRestTime()">
+        <span class="set-label">组间休息时长</span>
+        <span><span class="set-val" id="set-rest-val">60 秒</span> <span class="set-arrow">›</span></span>
+      </div>
+      <div class="set-row" onclick="clearWeekData()">
+        <span class="set-label">重置本周打卡</span>
+        <span class="set-arrow">›</span>
+      </div>
+      <div class="set-row" onclick="clearAllData()">
+        <span class="set-label" style="color:var(--red)">清除全部数据</span>
+        <span class="set-arrow">›</span>
+      </div>
+    </div>
+
+    <div class="sl">关于</div>
+    <div class="card">
+      <div class="set-row"><span class="set-label">版本</span><span class="set-val">1.0.0</span></div>
+      <div class="set-row"><span class="set-label">健身计划</span><span class="set-val">5周递进</span></div>
+      <div class="set-row"><span class="set-label">英语计划</span><span class="set-val">8周口语</span></div>
+    </div>
+
+    <!-- ══ 开发者模式 ══ -->
+    <div class="sl">开发者模式</div>
+    <div class="dev-zone">
+      <div class="dev-title">🔌 插件注入区 v1.0</div>
+      <div class="dev-desc">
+将 Claude 生成的新功能代码粘贴到下方文本框，点击「注入功能」即可立即生效。<br><br>
+· 新功能会显示在下方「已安装插件」区域<br>
+· 每个插件需用 &lt;div class="plugin-block"&gt; 包裹<br>
+· 如遇问题点「清除插件」重置
+      </div>
+      <textarea class="dev-textarea" id="plugin-input" placeholder="<!-- 在此粘贴 Claude 生成的插件代码 -->
+<div class='plugin-block'>
+  <!-- 你的新功能代码 -->
+</div>"></textarea>
+      <button class="dev-btn" onclick="injectPlugin()">⚡ 注入功能</button>
+      <button class="dev-btn" onclick="clearPlugins()" style="background:#3a3a3c;color:#fff;margin-top:6px">🗑 清除所有插件</button>
+    </div>
+
+    <!-- 插件输出区 -->
+    <div class="sl">已安装插件</div>
+    <div id="plugin-output">
+      <div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">暂无已安装插件</div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         🔌 PLUGIN ZONE - Claude 插件挂载点
+         新功能代码通过上方输入框注入到 #plugin-output
+         ═══════════════════════════════════════ -->
+
+  </div>
+  <div class="pb"></div>
+</div>
+
+<!-- ══════════════ 底部导航 ══════════════ -->
+<div class="tabbar">
+  <button class="titem active" onclick="goTo('home',this)"><div class="ticon">🏠</div><div class="tlabel">首页</div></button>
+  <button class="titem" onclick="goTo('fit',this)"><div class="ticon">💪</div><div class="tlabel">健身</div></button>
+  <button class="titem eng" onclick="goTo('eng',this)"><div class="ticon">📚</div><div class="tlabel">英语</div></button>
+  <button class="titem" onclick="goTo('diet',this)"><div class="ticon">🥗</div><div class="tlabel">饮食</div></button>
+  <button class="titem" onclick="goTo('settings',this)"><div class="ticon">⚙️</div><div class="tlabel">设置</div></button>
+</div>
+
+</div><!-- #app -->
+
+<script>
+// ════════════════════════════════════
+// 数据
+// ════════════════════════════════════
+const FIT_DAYS = [
+  { name:'周一', label:'胸肌+腹肌', time:'21:00', exs:[{n:'标准俯卧撑',s:'3组×12个',t:'count'},{n:'宽距俯卧撑',s:'3组×10个',t:'count'},{n:'钻石俯卧撑',s:'3组×8个',t:'count'},{n:'卷腹',s:'3组×15个',t:'count'},{n:'腿部举起',s:'3组×12个',t:'count'},{n:'平板支撑',s:'3组×30秒',t:'timer'}] },
+  { name:'周二', label:'有氧+腹肌', time:'21:00', exs:[{n:'开合跳',s:'3组×40秒',t:'timer'},{n:'高抬腿',s:'3组×30秒',t:'timer'},{n:'自行车卷腹',s:'3组×16次',t:'count'},{n:'俄罗斯转体',s:'3组×20次',t:'count'},{n:'登山跑',s:'3组×30秒',t:'timer'}] },
+  { name:'周三', label:'拉伸恢复', time:'休息', exs:[{n:'全身拉伸',s:'10分钟，重点拉胸肌和腹部',t:'timer'}] },
+  { name:'周四', label:'胸肌+腹肌', time:'21:00', exs:[{n:'标准俯卧撑',s:'3组×12个',t:'count'},{n:'宽距俯卧撑',s:'3组×10个',t:'count'},{n:'钻石俯卧撑',s:'3组×8个',t:'count'},{n:'卷腹',s:'3组×15个',t:'count'},{n:'腿部举起',s:'3组×12个',t:'count'},{n:'平板支撑',s:'3组×30秒',t:'timer'}] },
+  { name:'周五', label:'有氧+核心', time:'21:00', exs:[{n:'开合跳',s:'3组×40秒',t:'timer'},{n:'高抬腿',s:'3组×30秒',t:'timer'},{n:'自行车卷腹',s:'3组×16次',t:'count'},{n:'俄罗斯转体',s:'3组×20次',t:'count'},{n:'登山跑',s:'3组×30秒',t:'timer'}] },
+  { name:'周六', label:'全力胸腹冲刺', time:'10:00', exs:[{n:'俯卧撑到失败',s:'3组',t:'count'},{n:'窄距俯卧撑',s:'3组×10个',t:'count'},{n:'卷腹+腿举组合',s:'4组×12+10',t:'count'},{n:'平板支撑交替伸臂',s:'3组×10次/侧',t:'count'},{n:'波比跳',s:'3组×8个',t:'count'}] },
+  { name:'周日', label:'轻有氧+腹肌', time:'15:00', exs:[{n:'原地慢跑/散步',s:'20分钟',t:'timer'},{n:'卷腹',s:'3组×15个',t:'count'},{n:'侧平板支撑',s:'3组×20秒/侧',t:'timer'}] }
+];
+
+const WEEKS = [
+  { label:'第1周—基础适应期', note:'打好基础，动作标准比数量更重要。每组之间休息 60 秒。',
+    days:[
+      {title:'周一/周四—胸肌+腹肌',c:'#2563eb',items:['标准俯卧撑 3组×12','宽距俯卧撑 3组×10','钻石俯卧撑 3组×8','卷腹 3组×15','腿部举起 3组×12','平板支撑 3组×30秒']},
+      {title:'周二/周五—有氧+腹肌',c:'#059669',items:['开合跳 3组×40秒','高抬腿 3组×30秒','自行车卷腹 3组×16次','俄罗斯转体 3组×20次','登山跑 3组×30秒']},
+      {title:'周六—全力胸腹冲刺',c:'#7c3aed',items:['俯卧撑到失败 3组','窄距俯卧撑 3组×10','卷腹+腿举组合 4组×12+10','平板支撑交替伸臂 3组×10次/侧','波比跳 3组×8']},
+      {title:'周日—轻有氧+腹肌',c:'#059669',items:['原地慢跑/散步 20分钟','卷腹 3组×15','侧平板支撑 3组×20秒/侧']}
+    ]},
+  { label:'第2周—适应强化期', note:'加量20%，感受肌肉发力。休息时间保持 60 秒。',
+    days:[
+      {title:'周一/周四—胸肌+腹肌',c:'#2563eb',items:['标准俯卧撑 3组×14','宽距俯卧撑 3组×12','钻石俯卧撑 3组×10','卷腹 3组×18','腿部举起 3组×14','平板支撑 3组×35秒']},
+      {title:'周二/周五—有氧+腹肌',c:'#059669',items:['开合跳 3组×45秒','高抬腿 3组×35秒','自行车卷腹 3组×20次','俄罗斯转体 3组×24次','登山跑 3组×35秒']},
+      {title:'周六—全力胸腹冲刺',c:'#7c3aed',items:['俯卧撑到失败 3组','窄距俯卧撑 3组×12','卷腹+腿举组合 4组×14+12','平板支撑交替伸臂 3组×12次/侧','波比跳 3组×10']},
+      {title:'周日—轻有氧+腹肌',c:'#059669',items:['原地慢跑/散步 20分钟','卷腹 3组×18','侧平板支撑 3组×25秒/侧']}
+    ]},
+  { label:'第3周—超级组引入', note:'引入超级组（两个动作连续做不休息），减脂效果大幅提升。',
+    days:[
+      {title:'周一/周四—超级组',c:'#2563eb',items:['【超级组】标准俯卧撑15→卷腹20，共4组','【超级组】宽距俯卧撑12→腿举15，共3组','钻石俯卧撑 3组×10','平板支撑 3组×40秒']},
+      {title:'周二/周五—有氧+腹肌',c:'#059669',items:['开合跳 3组×50秒','高抬腿 3组×40秒','自行车卷腹 4组×22次','俄罗斯转体 3组×26次','登山跑 3组×40秒']},
+      {title:'周六—全力胸腹冲刺',c:'#7c3aed',items:['俯卧撑到失败 3组','【超级组】钻石×12→自行车卷腹×22，共3组','平板支撑交替伸臂 3组×13次/侧','波比跳 3组×12']},
+      {title:'周日—轻有氧+腹肌',c:'#059669',items:['原地慢跑/散步 20分钟','卷腹 3组×20','侧平板支撑 3组×30秒/侧']}
+    ]},
+  { label:'第4周—强化冲击期', note:'冲击本阶段最大量，动作精准全程发力。组间休息缩短至 45 秒。',
+    days:[
+      {title:'周一/周四—胸肌+腹肌',c:'#2563eb',items:['【超级组】标准俯卧撑16→卷腹22，共4组','【超级组】宽距俯卧撑14→腿举16，共4组','钻石俯卧撑 3组×12','平板支撑 3组×45秒']},
+      {title:'周二/周五—有氧+腹肌',c:'#059669',items:['开合跳 3组×60秒','高抬腿 3组×45秒','自行车卷腹 4组×24次','俄罗斯转体 3组×28次','登山跑 3组×45秒']},
+      {title:'周六—全力胸腹冲刺',c:'#7c3aed',items:['俯卧撑到失败 3组','【超级组】钻石×14→自行车卷腹×24，共3组','平板支撑交替伸臂 3组×14次/侧','波比跳 3组×14']},
+      {title:'周日—轻有氧+腹肌',c:'#059669',items:['原地慢跑/散步 25分钟','卷腹 3组×22','侧平板支撑 3组×35秒/侧']}
+    ]},
+  { label:'第5周—减量巩固期', note:'降量放松，巩固成果，避免平台期，为下一阶段储能。',
+    days:[
+      {title:'周一/周四—胸肌+腹肌（降量）',c:'#2563eb',items:['标准俯卧撑 3组×12','宽距俯卧撑 3组×10','钻石俯卧撑 3组×8','卷腹 3组×15','平板支撑 3组×40秒']},
+      {title:'周二/周五—有氧+腹肌（降量）',c:'#059669',items:['开合跳 2组×45秒','高抬腿 2组×30秒','自行车卷腹 3组×16次','登山跑 2组×30秒']},
+      {title:'周六—综合训练',c:'#7c3aed',items:['俯卧撑到80%力竭 2组','钻石俯卧撑 3组×10','卷腹+腿举组合 3组×12+10','波比跳 2组×8']},
+      {title:'周日—主动恢复',c:'#059669',items:['散步/慢跑 20分钟','全身拉伸 10分钟','好好休息，准备进入下一阶段']}
+    ]}
+];
+
+const DRILLS = [
+  {phrase:"How's it going?", phonetic:"/haʊz ɪt ˈɡoʊɪŋ/", meaning:"最近怎么样？/ 一切还好吗？", tip:"<b>场景：</b>见朋友时的日常问候，比 How are you 更口语。<br><b>回答：</b>Pretty good! / Not bad, you?<br><b>要点：</b>语调先升后降，整句连读流畅。"},
+  {phrase:"That makes sense.", phonetic:"/ðæt meɪks sens/", meaning:"有道理。/ 说得通。", tip:"<b>场景：</b>听别人说话后表示理解认同，超高频口语词。<br><b>变体：</b>That totally makes sense. / Yeah, that makes sense.<br><b>要点：</b>makes 和 sense 几乎连成一个词。"},
+  {phrase:"I'm just kidding.", phonetic:"/aɪm dʒʌst ˈkɪdɪŋ/", meaning:"我只是在开玩笑。", tip:"<b>场景：</b>说完一个玩笑后用来澄清，避免误会。<br><b>变体：</b>Just kidding! / I'm only joking.<br><b>要点：</b>kidding 重读，语气轻松。"},
+  {phrase:"What do you mean?", phonetic:"/wɒt duː juː miːn/", meaning:"你什么意思？/ 你是说？", tip:"<b>场景：</b>听不明白对方说的，礼貌地请求解释。<br><b>变体：</b>What do you mean by that? / Sorry, I'm not following.<br><b>要点：</b>do you 连读接近 dya。"},
+  {phrase:"It depends.", phonetic:"/ɪt dɪˈpendz/", meaning:"要看情况。/ 视情而定。", tip:"<b>场景：</b>回答不确定的问题时最地道的表达。<br><b>扩展：</b>It depends on the situation. / It really depends.<br><b>要点：</b>简短有力，是超实用的万能回答。"},
+  {phrase:"That's what I was thinking.", phonetic:"/ðæts wɒt aɪ wəz ˈθɪŋkɪŋ/", meaning:"我也是这么想的。", tip:"<b>场景：</b>对方说出了你心里想说的，表示共鸣。<br><b>变体：</b>Exactly what I thought! / My thoughts exactly.<br><b>要点：</b>was thinking 是过去进行时，表示之前一直这样想。"}
+];
+
+const WORDS = [
+  {w:"hang out", p:"/hæŋ aʊt/", m:"出去玩、聚一聚", e:"Let's hang out this weekend!"},
+  {w:"catch up", p:"/kætʃ ʌp/", m:"叙旧、了解近况", e:"We should catch up over coffee."},
+  {w:"go for it", p:"/ɡoʊ fɔːr ɪt/", m:"去做吧、试试看", e:"If you want to apply, just go for it!"},
+  {w:"no worries", p:"/noʊ ˈwʌriz/", m:"没关系、不用担心", e:"No worries, I'll handle it."},
+  {w:"figure out", p:"/ˈfɪɡjər aʊt/", m:"弄清楚、想明白", e:"I need to figure out what to do next."}
+];
+
+const ENG_PLAN = [
+  {week:"第1–2周", title:"开口基础", color:"#059669", tasks:["每天跟读 6 个日常口语句型，每句重复 3 遍","学习 5 个高频口语词，造一个自己的例句","用 AI 陪练进行 5 轮简单对话（自我介绍、日常问候）","听 10 分钟英文内容（YouTube / 播客），不要求全懂"]},
+  {week:"第3–4周", title:"对话扩展", color:"#2563eb", tasks:["增加跟读难度：连续句型和常用对话段落","AI 陪练主题：工作、爱好、日常生活，每次 10 轮","开始看带字幕的英文短视频（5–10分钟），重复看同一段","每天用英语写 2–3 句日记（可以有错，AI帮你改）"]},
+  {week:"第5–6周", title:"影视输入", color:"#7c3aed", tasks:["选一部英文美剧/电影，先开中字看一遍理解剧情","再开英字重看，遇到不懂的句子暂停跟读","摘录 3 个喜欢的句子，AI 陪练中模仿使用","AI 对话延长到 15 轮，尝试描述剧情或发表观点"]},
+  {week:"第7–8周", title:"流利冲刺", color:"#b45309", tasks:["影子跟读：听一句立刻跟读，不看字幕挑战","AI 陪练：自由话题对话，AI 重点纠正语音语调","每天至少说 3 分钟英文（可以录音回听）","完成挑战：用英文讲述一段你喜欢的影视情节"]}
+];
+
+// ════════════════════════════════════
+// 工具函数
+// ════════════════════════════════════
+const todayIdx = (new Date().getDay() + 6) % 7; // 0=Mon
+
+function ls(key, def=null) { try { const v=localStorage.getItem(key); return v!==null?JSON.parse(v):def; } catch(e){return def;} }
+function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){} }
+
+function getWeekDone(type) { return ls('week_done_'+type, {}); }
+function setWeekDone(type, d) { lsSet('week_done_'+type, d); }
+function getTodayFitEx() { return ls('fit_ex_'+todayIdx, []); }
+function setTodayFitEx(a) { lsSet('fit_ex_'+todayIdx, a); }
+function getEngTasks() { return ls('eng_tasks_today', []); }
+function setEngTasks(a) { lsSet('eng_tasks_today', a); }
+
+// ════════════════════════════════════
+// 导航
+// ════════════════════════════════════
+function goTo(id, btn) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.titem').forEach(t=>t.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+function fitTab(id, btn) {
+  document.querySelectorAll('#s-fit .subpanel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#s-fit .stab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('fit-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='calendar') renderCalendar();
+}
+function engTab(id, btn) {
+  document.querySelectorAll('#s-eng .subpanel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#s-eng .stab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('eng-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ════════════════════════════════════
+// 首页
+// ════════════════════════════════════
+function renderHome() {
+  const d = new Date();
+  const days = ['周日','周一','周二','周三','周四','周五','周六'];
+  document.getElementById('home-date').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 · ${days[d.getDay()]}`;
+
+  // Fitness ring
+  const fitDone = getWeekDone('fit');
+  const fitCount = Object.values(fitDone).filter(Boolean).length;
+  document.getElementById('fit-ring-num').textContent = fitCount+'/6';
+  const circ = 138;
+  document.getElementById('ring-fit').style.strokeDashoffset = circ-(circ*fitCount/6);
+
+  // Eng ring
+  const engDone = getWeekDone('eng');
+  const engCount = Object.values(engDone).filter(Boolean).length;
+  document.getElementById('eng-ring-num').textContent = engCount+'/7';
+  document.getElementById('ring-eng').style.strokeDashoffset = circ-(circ*engCount/7);
+
+  // Today fitness list (home)
+  renderFitList('home-fit-list');
+
+  // Eng tasks
+  const et = getEngTasks();
+  [0,1,2].forEach(i => {
+    const el = document.getElementById('eng-task-'+(i+1));
+    const chk = document.getElementById('eng-check-'+i);
+    if(et.includes(i)){el.classList.add('done');chk.textContent='✓';}
+    else{el.classList.remove('done');chk.textContent='';}
+  });
+}
+
+function renderFitList(containerId) {
+  const day = FIT_DAYS[todayIdx];
+  const doneArr = getTodayFitEx();
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  container.innerHTML = day.exs.map((ex,i)=>{
+    const done = doneArr.includes(i);
+    return `<div class="exitem${done?' done':''}" onclick="toggleFitEx(${i})" id="${containerId}-ex-${i}">
+      <div class="excheck">${done?'✓':''}</div>
+      <div>
+        <div class="exname">${ex.n}</div>
+        <div class="exsets">${ex.s}</div>
+      </div>
+      <span class="extag ${ex.t==='timer'?'tag-timer':'tag-count'}">${ex.t==='timer'?'⏱计时':'🔢计数'}</span>
+    </div>`;
+  }).join('');
+}
+
+function toggleFitEx(i) {
+  const arr = getTodayFitEx();
+  const idx = arr.indexOf(i); if(idx===-1) arr.push(i); else arr.splice(idx,1);
+  setTodayFitEx(arr);
+  renderFitList('home-fit-list');
+  renderFitList('fit-ex-list');
+}
+
+function markFitDone() {
+  const all = FIT_DAYS[todayIdx].exs.map((_,i)=>i);
+  setTodayFitEx(all);
+  const d = getWeekDone('fit'); d[todayIdx]=true; setWeekDone('fit',d);
+  // calendar
+  const dateKey = getDateKey(new Date());
+  const cal = ls('cal_data',{}); cal[dateKey] = (cal[dateKey]||'');
+  if(!cal[dateKey].includes('f')) cal[dateKey]+='f';
+  lsSet('cal_data',cal);
+  renderHome();
+  renderFitList('fit-ex-list');
+  alert('💪 今天健身打卡完成！');
+}
+
+function toggleEngTask(i) {
+  const arr = getEngTasks();
+  const idx = arr.indexOf(i); if(idx===-1) arr.push(i); else arr.splice(idx,1);
+  setEngTasks(arr); renderHome();
+}
+
+function markEngDone() {
+  setEngTasks([0,1,2]);
+  const d = getWeekDone('eng'); d[todayIdx]=true; setWeekDone('eng',d);
+  const dateKey = getDateKey(new Date());
+  const cal = ls('cal_data',{}); cal[dateKey] = (cal[dateKey]||'');
+  if(!cal[dateKey].includes('e')) cal[dateKey]+='e';
+  lsSet('cal_data',cal);
+  renderHome();
+  alert('📚 今天英语打卡完成！');
+}
+
+// ════════════════════════════════════
+// 计时器
+// ════════════════════════════════════
+let timerSec=60, timerTotal=60, timerRunning=false, timerInt=null;
+function updateTimerUI() {
+  const m=Math.floor(timerSec/60).toString().padStart(2,'0');
+  const s=(timerSec%60).toString().padStart(2,'0');
+  document.getElementById('timer-disp').textContent=m+':'+s;
+  const pct=Math.round((1-timerSec/timerTotal)*100);
+  const p=document.getElementById('timer-prog'); if(p) p.style.width=pct+'%';
+}
+function setTimerDur(sec) {
+  clearInterval(timerInt); timerRunning=false;
+  timerSec=sec; timerTotal=sec;
+  document.getElementById('timer-btn').textContent='▶';
+  updateTimerUI();
+}
+function toggleTimer() {
+  if(timerRunning){clearInterval(timerInt);timerRunning=false;document.getElementById('timer-btn').textContent='▶';}
+  else {
+    if(timerSec===0){timerSec=timerTotal;}
+    timerRunning=true; document.getElementById('timer-btn').textContent='⏸';
+    timerInt=setInterval(()=>{
+      timerSec--;updateTimerUI();
+      if(timerSec<=0){clearInterval(timerInt);timerRunning=false;document.getElementById('timer-btn').textContent='▶';if(navigator.vibrate)navigator.vibrate([300,100,300]);}
+    },1000);
+  }
+}
+function resetTimer(){clearInterval(timerInt);timerRunning=false;timerSec=timerTotal;document.getElementById('timer-btn').textContent='▶';updateTimerUI();}
+
+// ════════════════════════════════════
+// 计数器
+// ════════════════════════════════════
+let counterVal=0, counterSet=1;
+function counterChange(d){
+  counterVal=Math.max(0,counterVal+d);
+  document.getElementById('counter-num').textContent=counterVal;
+}
+function resetCounter(){counterVal=0;document.getElementById('counter-num').textContent='0';}
+function nextSet(){
+  counterSet++;counterVal=0;
+  document.getElementById('counter-num').textContent='0';
+  document.getElementById('counter-sub').textContent='第 '+counterSet+' 组 · 目标 15 个';
+  if(navigator.vibrate)navigator.vibrate(100);
+}
+
+// ════════════════════════════════════
+// 月历
+// ════════════════════════════════════
+let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
+function getDateKey(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function calMove(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++;}else if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+function renderCalendar(){
+  const months=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  document.getElementById('cal-title').textContent=calYear+'年 '+months[calMonth];
+  const calData=ls('cal_data',{});
+  const grid=document.getElementById('cal-grid');
+  const dayNames=['一','二','三','四','五','六','日'];
+  let html=dayNames.map(n=>`<div class="cal-dayname">${n}</div>`).join('');
+  const first=new Date(calYear,calMonth,1).getDay();
+  const offset=(first+6)%7;
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const today=new Date();
+  for(let i=0;i<offset;i++) html+=`<div class="cal-cell"></div>`;
+  let fitCount=0,engCount=0,bothCount=0;
+  for(let d=1;d<=daysInMonth;d++){
+    const key=calYear+'-'+(calMonth+1)+'-'+d;
+    const v=calData[key]||'';
+    const hasFit=v.includes('f'), hasEng=v.includes('e');
+    if(hasFit)fitCount++;if(hasEng)engCount++;if(hasFit&&hasEng)bothCount++;
+    const isToday=d===today.getDate()&&calMonth===today.getMonth()&&calYear===today.getFullYear();
+    let cls='cal-cell has-date';
+    if(hasFit&&hasEng)cls+=' trained-both';
+    else if(hasFit)cls+=' trained';
+    else if(hasEng)cls+=' trained-eng';
+    if(isToday)cls+=' today-cell';
+    html+=`<button class="${cls}" onclick="toggleCalDay(${d})">${d}</button>`;
+  }
+  grid.innerHTML=html;
+  document.getElementById('cal-fit-count').textContent=fitCount;
+  document.getElementById('cal-eng-count').textContent=engCount;
+  document.getElementById('cal-both-count').textContent=bothCount;
+}
+function toggleCalDay(d){
+  const key=calYear+'-'+(calMonth+1)+'-'+d;
+  const cal=ls('cal_data',{});
+  const cur=cal[key]||'';
+  if(!cur) cal[key]='f';
+  else if(cur==='f') cal[key]='fe';
+  else if(cur==='fe') cal[key]='e';
+  else if(cur==='e') cal[key]='';
+  else cal[key]='';
+  lsSet('cal_data',cal);
+  renderCalendar();
+}
+
+// ════════════════════════════════════
+// 5周计划
+// ════════════════════════════════════
+function renderWeekTabs(){
+  const tabs=document.getElementById('week-tabs');
+  tabs.innerHTML=WEEKS.map((w,i)=>`<button class="wtab${i===0?' active':''}" onclick="setWeek(${i},this)">${i+1}周</button>`).join('');
+}
+function setWeek(idx,btn){
+  document.querySelectorAll('.wtab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  const w=WEEKS[idx];
+  document.getElementById('plan-prog').style.width=Math.round((idx+1)/5*100)+'%';
+  document.getElementById('plan-label').textContent=w.label;
+  document.getElementById('plan-frac').textContent=(idx+1)+'/5';
+  document.getElementById('plan-note').textContent=w.note;
+  document.getElementById('plan-content').innerHTML=w.days.map(d=>`
+    <div class="card" style="margin-bottom:10px"><div class="cb">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:9px;height:9px;border-radius:50%;background:${d.c};flex-shrink:0"></div>
+        <div style="font-size:14px;font-weight:700">${d.title}</div>
+      </div>
+      ${d.items.map(it=>`<div class="planitem"><span class="pldot" style="color:${d.c}">▸</span>${it}</div>`).join('')}
+    </div></div>`).join('');
+}
+
+// ════════════════════════════════════
+// 跟读练习
+// ════════════════════════════════════
+let drillIdx=0;
+function renderDrill(){
+  const d=DRILLS[drillIdx];
+  document.getElementById('drill-phrase').textContent=d.phrase;
+  document.getElementById('drill-phonetic').textContent=d.phonetic;
+  document.getElementById('drill-meaning').textContent=d.meaning;
+  document.getElementById('drill-tip').innerHTML=d.tip;
+  document.getElementById('drill-progress').textContent=(drillIdx+1)+' / '+DRILLS.length;
+}
+function nextDrill(){drillIdx=(drillIdx+1)%DRILLS.length;renderDrill();}
+function speakPhrase(){
+  if('speechSynthesis' in window){
+    const u=new SpeechSynthesisUtterance(DRILLS[drillIdx].phrase);
+    u.lang='en-US';u.rate=0.85;speechSynthesis.speak(u);
+  } else { alert('当前浏览器不支持语音朗读，请在 Safari 中使用'); }
+}
+function renderWords(){
+  const container=document.getElementById('word-list');
+  container.innerHTML=WORDS.map(w=>`
+    <div class="exitem divrow">
+      <div>
+        <div class="exname">${w.w} <span style="font-size:12px;color:var(--muted);font-weight:400">${w.p}</span></div>
+        <div class="exsets">${w.m}</div>
+        <div style="font-size:12px;color:#555;margin-top:3px;font-style:italic">${w.e}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════
+// AI 陪练
+// ════════════════════════════════════
+let chatHistory=[{role:'user',content:`You are an English conversation coach helping a Chinese beginner (elementary level) improve their spoken English for daily conversations and understanding English media.
+
+Rules:
+1. Always respond in a warm, encouraging tone
+2. After each user message, naturally correct any grammar/vocabulary errors by modeling the correct form in your response (don't make it feel like a lecture)
+3. Ask follow-up questions to keep the conversation going
+4. Occasionally introduce a new useful phrase or expression relevant to the topic
+5. Keep your responses concise (3-5 sentences max) so the user isn't overwhelmed
+6. If the user writes in Chinese, gently encourage them to try in English first, then help them express it
+
+Start the conversation naturally as already started.`}];
+
+async function sendChat(){
+  const input=document.getElementById('chat-input');
+  const msg=input.value.trim(); if(!msg) return;
+  input.value='';
+  document.getElementById('chat-send-btn').disabled=true;
+
+  const list=document.getElementById('chat-list');
+  list.innerHTML+=`<div class="chat-bubble bubble-user">${msg}</div>`;
+  chatHistory.push({role:'user',content:msg});
+
+  // Typing indicator
+  const typingId='typing-'+Date.now();
+  list.innerHTML+=`<div class="chat-bubble bubble-ai" id="${typingId}"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>`;
+  list.parentElement.scrollTop=list.parentElement.scrollHeight;
+
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        system: chatHistory[0].content,
+        messages: chatHistory.slice(1)
+      })
+    });
+    const data=await res.json();
+    const reply=data.content?.[0]?.text||"I'm sorry, I couldn't respond. Please try again.";
+    chatHistory.push({role:'assistant',content:reply});
+    document.getElementById(typingId).innerHTML=reply.replace(/\n/g,'<br>');
+  } catch(e){
+    document.getElementById(typingId).innerHTML='⚠️ 网络错误，请检查网络连接后重试。';
+  }
+  document.getElementById('chat-send-btn').disabled=false;
+  list.parentElement.scrollTop=list.parentElement.scrollHeight;
+}
+
+// ════════════════════════════════════
+// 语音输入
+// ════════════════════════════════════
+let recognition = null;
+let isRecording = false;
+
+function initVoice() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return null;
+  const r = new SpeechRecognition();
+  r.lang = 'en-US';
+  r.continuous = false;
+  r.interimResults = true;
+  r.maxAlternatives = 1;
+
+  r.onstart = () => {
+    isRecording = true;
+    document.getElementById('mic-btn').classList.add('recording');
+    document.getElementById('mic-btn').textContent = '⏹';
+    document.getElementById('voice-hint').classList.add('show');
+    document.getElementById('chat-input').placeholder = '正在识别语音...';
+  };
+
+  r.onresult = (e) => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    document.getElementById('chat-input').value = final || interim;
+  };
+
+  r.onend = () => {
+    isRecording = false;
+    document.getElementById('mic-btn').classList.remove('recording');
+    document.getElementById('mic-btn').textContent = '🎤';
+    document.getElementById('voice-hint').classList.remove('show');
+    document.getElementById('chat-input').placeholder = '开口说 或 打字输入...';
+    // Auto-send if there's content
+    const val = document.getElementById('chat-input').value.trim();
+    if (val) sendChat();
+  };
+
+  r.onerror = (e) => {
+    isRecording = false;
+    document.getElementById('mic-btn').classList.remove('recording');
+    document.getElementById('mic-btn').textContent = '🎤';
+    document.getElementById('voice-hint').classList.remove('show');
+    document.getElementById('chat-input').placeholder = '开口说 或 打字输入...';
+    if (e.error === 'not-allowed') {
+      alert('请在 iPhone 设置 → Safari → 麦克风 中允许访问麦克风');
+    } else if (e.error === 'no-speech') {
+      document.getElementById('chat-input').placeholder = '没有检测到声音，请再试一次...';
+      setTimeout(() => { document.getElementById('chat-input').placeholder = '开口说 或 打字输入...'; }, 2000);
+    }
+  };
+
+  return r;
+}
+
+function toggleVoice() {
+  if (isRecording) {
+    if (recognition) recognition.stop();
+    return;
+  }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert('你的浏览器不支持语音输入。请确保在 Safari 中打开此 App，并更新到 iOS 16 以上版本。');
+    return;
+  }
+  recognition = initVoice();
+  if (recognition) {
+    try { recognition.start(); }
+    catch(e) { console.log('Recognition start error:', e); }
+  }
+}
+
+// ════════════════════════════════════
+// 英语学习计划
+// ════════════════════════════════════
+function renderEngPlan(){
+  const container=document.getElementById('eng-plan-list');
+  container.innerHTML=ENG_PLAN.map(p=>`
+    <div class="eng-week">
+      <div class="eng-week-head" onclick="toggleEngWeek(this)">
+        <div class="eng-week-num" style="background:${p.color}">${p.week.split('–')[0].replace('第','')}</div>
+        <div class="eng-week-title">${p.week} · ${p.title}</div>
+        <div style="color:var(--muted);font-size:13px">›</div>
+      </div>
+      <div class="eng-week-body">
+        ${p.tasks.map(t=>`<div class="eng-task"><span class="eng-task-dot">▸</span>${t}</div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+function toggleEngWeek(head){
+  const body=head.nextElementSibling;
+  body.classList.toggle('open');
+  head.querySelector('div:last-child').textContent=body.classList.contains('open')?'∨':'›';
+}
+
+// ════════════════════════════════════
+// 设置
+// ════════════════════════════════════
+function setRestTime(){
+  const opts=['30秒','45秒','60秒','90秒'];
+  const cur=ls('rest_time','60秒');
+  const next=opts[(opts.indexOf(cur)+1)%opts.length];
+  lsSet('rest_time',next);
+  document.getElementById('set-rest-val').textContent=next;
+  setTimerDur(parseInt(next));
+}
+function clearWeekData(){if(confirm('确定要重置本周打卡记录吗？')){lsSet('week_done_fit',{});lsSet('week_done_eng',{});renderHome();alert('已重置');}}
+function clearAllData(){if(confirm('确定要清除全部数据吗？此操作不可恢复！')){localStorage.clear();location.reload();}}
+
+// ════════════════════════════════════
+// 插件系统
+// ════════════════════════════════════
+function injectPlugin(){
+  const code=document.getElementById('plugin-input').value.trim();
+  if(!code){alert('请先粘贴插件代码');return;}
+  const output=document.getElementById('plugin-output');
+  const empty=output.querySelector('div[style]');
+  if(empty)empty.remove();
+  const wrapper=document.createElement('div');
+  wrapper.innerHTML=code;
+  // Execute any scripts in the plugin
+  wrapper.querySelectorAll('script').forEach(s=>{
+    const newS=document.createElement('script');
+    newS.textContent=s.textContent;
+    document.head.appendChild(newS);
+  });
+  output.appendChild(wrapper);
+  // Save plugins
+  const plugins=ls('plugins',[]);
+  plugins.push(code);
+  lsSet('plugins',plugins);
+  document.getElementById('plugin-input').value='';
+  alert('✅ 插件注入成功！');
+}
+function clearPlugins(){
+  if(confirm('确定要清除所有已安装插件吗？')){
+    lsSet('plugins',[]);
+    document.getElementById('plugin-output').innerHTML='<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">暂无已安装插件</div>';
+    alert('已清除所有插件');
+  }
+}
+function loadSavedPlugins(){
+  const plugins=ls('plugins',[]);
+  if(plugins.length===0)return;
+  const output=document.getElementById('plugin-output');
+  output.innerHTML='';
+  plugins.forEach(code=>{
+    const wrapper=document.createElement('div');
+    wrapper.innerHTML=code;
+    wrapper.querySelectorAll('script').forEach(s=>{
+      const newS=document.createElement('script'); newS.textContent=s.textContent; document.head.appendChild(newS);
+    });
+    output.appendChild(wrapper);
+  });
+}
+
+// ════════════════════════════════════
+// 初始化
+// ════════════════════════════════════
+renderHome();
+updateTimerUI();
+renderWeekTabs();
+setWeek(0, document.querySelector('.wtab'));
+renderDrill();
+renderWords();
+renderEngPlan();
+renderFitList('fit-ex-list');
+loadSavedPlugins();
+
+// Restore rest time setting
+const savedRest=ls('rest_time','60秒');
+document.getElementById('set-rest-val').textContent=savedRest;
+timerSec=parseInt(savedRest);timerTotal=timerSec;updateTimerUI();
+</script>
+</body>
+</html>
