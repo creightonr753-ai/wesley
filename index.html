@@ -5,12 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
 <meta name="apple-mobile-web-app-title" content="Wesley Go">
 <link rel="apple-touch-icon" href="icon.jpg">
-<link rel="apple-touch-icon-precomposed" href="icon.jpg">
 <link rel="icon" type="image/jpeg" href="icon.jpg">
 <title>Wesley Go</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --blue: #2563eb; --blue-l: #dbeafe;
@@ -214,16 +213,67 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,"PingFang SC",sa
 .badge-chest{background:var(--blue-l);color:var(--blue)}
 .badge-abs{background:var(--eng-l);color:var(--green)}
 .badge-cardio{background:var(--amber-l);color:var(--amber)}
+
+/* ── Auth Screen ── */
+#auth-screen{position:fixed;inset:0;z-index:999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;padding-top:calc(env(safe-area-inset-top,44px) + 40px)}
+#auth-screen.hidden{display:none}
+.auth-logo{width:110px;height:110px;border-radius:26px;object-fit:cover;margin-bottom:24px;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+.auth-title{font-size:26px;font-weight:700;margin-bottom:6px;text-align:center}
+.auth-sub{font-size:14px;color:var(--muted);margin-bottom:36px;text-align:center;line-height:1.5}
+.auth-input{width:100%;padding:14px 16px;border-radius:12px;border:1.5px solid var(--border);font-size:16px;font-family:inherit;outline:none;margin-bottom:10px;background:var(--bg)}
+.auth-input:focus{border-color:var(--blue)}
+.auth-btn{width:100%;padding:15px;border-radius:14px;border:none;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:10px}
+.btn-email{background:var(--blue);color:#fff}
+.btn-google{background:#fff;color:#1a1a1a;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:2px 0 12px;width:100%}
+.auth-divider span{font-size:12px;color:var(--muted);white-space:nowrap}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:.5px;background:var(--border)}
+.auth-toggle{font-size:13px;color:var(--muted);text-align:center;margin-top:6px}
+.auth-toggle b{color:var(--blue);cursor:pointer}
+.auth-err{font-size:13px;color:var(--red);text-align:center;min-height:18px;margin-bottom:4px}
+.user-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.2);border-radius:20px;padding:4px 12px 4px 4px;cursor:pointer}
+.user-av{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0}
+.user-av img{width:100%;height:100%;object-fit:cover}
+.user-name-chip{font-size:12px;color:#fff;font-weight:500;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.home-tbar-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 </style>
 </head>
 <body>
 <div id="app">
 
+<!-- ══════════════ 登录页 ══════════════ -->
+<div id="auth-screen">
+  <img src="icon.jpg" class="auth-logo" onerror="this.style.display='none'">
+  <div class="auth-title">Wesley Go</div>
+  <div class="auth-sub" id="auth-sub">登录你的账号，开始今日计划</div>
+
+  <div id="auth-form" style="width:100%">
+    <div class="auth-err" id="auth-err"></div>
+    <input class="auth-input" id="auth-email" type="email" placeholder="邮箱地址">
+    <input class="auth-input" id="auth-pass" type="password" placeholder="密码（6位以上）">
+    <button class="auth-btn btn-email" onclick="authSubmit()" id="auth-submit-btn">登录</button>
+    <div class="auth-divider"><span>或</span></div>
+    <button class="auth-btn btn-google" onclick="authGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+      用 Google 账号登录
+    </button>
+    <div class="auth-toggle">还没有账号？<b onclick="toggleAuthMode()">立即注册</b></div>
+  </div>
+</div>
+
 <!-- ══════════════ 首页 ══════════════ -->
 <div class="screen active" id="s-home">
   <div class="tbar home">
-    <h1 id="home-title">💪 今日计划</h1>
-    <p id="home-date">加载中...</p>
+    <div class="home-tbar-row">
+      <div>
+        <h1 id="home-title">💪 今日计划</h1>
+        <p id="home-date">加载中...</p>
+      </div>
+      <div class="user-chip" onclick="showUserMenu()">
+        <div class="user-av" id="user-av">W</div>
+        <div class="user-name-chip" id="user-name-chip">我</div>
+      </div>
+    </div>
   </div>
   <div class="sg">
     <div class="sl">今日进度</div>
@@ -684,9 +734,14 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,"PingFang SC",sa
       </div>
     </div>
 
+    <div class="sl">账号</div>
+    <div class="card">
+      <div class="set-row"><span class="set-label">当前账号</span><span class="set-val" id="set-email" style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis">加载中...</span></div>
+      <div class="set-row" onclick="supa.auth.signOut()" style="cursor:pointer"><span class="set-label" style="color:var(--red)">退出登录</span><span class="set-arrow">›</span></div>
+    </div>
     <div class="sl">关于</div>
     <div class="card">
-      <div class="set-row"><span class="set-label">版本</span><span class="set-val">1.0.0</span></div>
+      <div class="set-row"><span class="set-label">版本</span><span class="set-val">2.0.0</span></div>
       <div class="set-row"><span class="set-label">健身计划</span><span class="set-val">5周递进</span></div>
       <div class="set-row"><span class="set-label">英语计划</span><span class="set-val">8周口语</span></div>
     </div>
@@ -812,19 +867,163 @@ const ENG_PLAN = [
 ];
 
 // ════════════════════════════════════
-// 工具函数
+// Supabase 初始化
+// ════════════════════════════════════
+const SUPA_URL = 'https://cykhozggaipjkccmyfpc.supabase.co';
+const SUPA_KEY = 'sb_publishable_vVk9CvAWSKk95g17GB3dzw_Fwmw5A5h';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+let currentUser = null;
+let authMode = 'login'; // 'login' | 'register'
+
+// ════════════════════════════════════
+// 认证功能
+// ════════════════════════════════════
+async function initAuth() {
+  const { data: { session } } = await supa.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    showApp();
+  } else {
+    document.getElementById('auth-screen').classList.remove('hidden');
+  }
+  supa.auth.onAuthStateChange((event, session) => {
+    if (session?.user) {
+      currentUser = session.user;
+      showApp();
+    } else {
+      currentUser = null;
+      document.getElementById('auth-screen').classList.remove('hidden');
+    }
+  });
+}
+
+function showApp() {
+  document.getElementById('auth-screen').classList.add('hidden');
+  updateUserChip();
+  renderHome();
+  updateTimerUI();
+  renderWeekTabs();
+  setWeek(0, document.querySelector('.wtab'));
+  renderDrill();
+  renderWords();
+  renderEngPlan();
+  renderFitList('fit-ex-list');
+  loadSavedPlugins();
+  const savedRest = ls('rest_time','60秒');
+  document.getElementById('set-rest-val').textContent = savedRest;
+  timerSec = parseInt(savedRest); timerTotal = timerSec; updateTimerUI();
+}
+
+function updateUserChip() {
+  if (!currentUser) return;
+  const name = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'W';
+  const avatar = currentUser.user_metadata?.avatar_url;
+  document.getElementById('user-name-chip').textContent = name.split(' ')[0];
+  const av = document.getElementById('user-av');
+  if (avatar) {
+    av.innerHTML = `<img src="${avatar}" alt="${name}">`;
+  } else {
+    av.textContent = name[0].toUpperCase();
+  }
+}
+
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'register' : 'login';
+  const btn = document.getElementById('auth-submit-btn');
+  const sub = document.getElementById('auth-sub');
+  const toggle = document.querySelector('.auth-toggle');
+  if (authMode === 'register') {
+    btn.textContent = '注册账号';
+    sub.textContent = '创建账号，开始你的健身英语之旅';
+    toggle.innerHTML = '已有账号？<b onclick="toggleAuthMode()">立即登录</b>';
+  } else {
+    btn.textContent = '登录';
+    sub.textContent = '登录你的账号，开始今日计划';
+    toggle.innerHTML = '还没有账号？<b onclick="toggleAuthMode()">立即注册</b>';
+  }
+  document.getElementById('auth-err').textContent = '';
+}
+
+async function authSubmit() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass = document.getElementById('auth-pass').value;
+  const err = document.getElementById('auth-err');
+  const btn = document.getElementById('auth-submit-btn');
+  if (!email || !pass) { err.textContent = '请填写邮箱和密码'; return; }
+  if (pass.length < 6) { err.textContent = '密码至少 6 位'; return; }
+  btn.textContent = '处理中...'; btn.disabled = true; err.textContent = '';
+  try {
+    let result;
+    if (authMode === 'register') {
+      result = await supa.auth.signUp({ email, password: pass });
+      if (result.error) throw result.error;
+      if (result.data.user && !result.data.session) {
+        err.style.color = 'var(--green)';
+        err.textContent = '注册成功！请检查邮箱确认链接后登录。';
+        btn.textContent = '登录'; btn.disabled = false;
+        authMode = 'login'; return;
+      }
+    } else {
+      result = await supa.auth.signInWithPassword({ email, password: pass });
+      if (result.error) throw result.error;
+    }
+  } catch(e) {
+    const msgs = { 'Invalid login credentials':'邮箱或密码错误', 'Email not confirmed':'请先验证邮箱', 'User already registered':'该邮箱已注册，请直接登录' };
+    err.style.color = 'var(--red)';
+    err.textContent = msgs[e.message] || e.message;
+  }
+  btn.textContent = authMode === 'login' ? '登录' : '注册账号';
+  btn.disabled = false;
+}
+
+async function authGoogle() {
+  await supa.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+}
+
+function showUserMenu() {
+  const name = currentUser?.user_metadata?.full_name || currentUser?.email || '用户';
+  const email = currentUser?.email || '';
+  if (confirm(`账号：${email}\n\n点击「确定」退出登录`)) {
+    supa.auth.signOut();
+  }
+}
+
+// ════════════════════════════════════
+// 工具函数（本地缓存 + 云端同步）
 // ════════════════════════════════════
 const todayIdx = (new Date().getDay() + 6) % 7; // 0=Mon
 
 function ls(key, def=null) { try { const v=localStorage.getItem(key); return v!==null?JSON.parse(v):def; } catch(e){return def;} }
 function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){} }
 
-function getWeekDone(type) { return ls('week_done_'+type, {}); }
-function setWeekDone(type, d) { lsSet('week_done_'+type, d); }
-function getTodayFitEx() { return ls('fit_ex_'+todayIdx, []); }
-function setTodayFitEx(a) { lsSet('fit_ex_'+todayIdx, a); }
-function getEngTasks() { return ls('eng_tasks_today', []); }
-function setEngTasks(a) { lsSet('eng_tasks_today', a); }
+// 打卡数据优先存云端，同时缓存本地
+function getWeekDone(type) { return ls('week_done_'+type+'_'+(currentUser?.id||''), {}); }
+function setWeekDone(type, d) {
+  lsSet('week_done_'+type+'_'+(currentUser?.id||''), d);
+  syncCheckin(type, d);
+}
+function getTodayFitEx() { return ls('fit_ex_'+todayIdx+'_'+(currentUser?.id||''), []); }
+function setTodayFitEx(a) { lsSet('fit_ex_'+todayIdx+'_'+(currentUser?.id||''), a); }
+function getEngTasks() { return ls('eng_tasks_today_'+(currentUser?.id||''), []); }
+function setEngTasks(a) { lsSet('eng_tasks_today_'+(currentUser?.id||''), a); }
+
+async function syncCheckin(type, weekData) {
+  if (!currentUser) return;
+  try {
+    const today = getDateKey(new Date());
+    if (weekData[todayIdx]) {
+      await supa.from('checkins').upsert({
+        user_id: currentUser.id,
+        date: today,
+        type: type
+      }, { onConflict: 'user_id,date,type' });
+    }
+  } catch(e) { console.log('sync error:', e); }
+}
 
 // ════════════════════════════════════
 // 导航
@@ -1309,20 +1508,21 @@ function loadSavedPlugins(){
 // ════════════════════════════════════
 // 初始化
 // ════════════════════════════════════
-renderHome();
-updateTimerUI();
-renderWeekTabs();
-setWeek(0, document.querySelector('.wtab'));
-renderDrill();
-renderWords();
-renderEngPlan();
-renderFitList('fit-ex-list');
-loadSavedPlugins();
+// 先显示登录页，验证后再进App
+document.getElementById('auth-screen').classList.remove('hidden');
+initAuth();
 
-// Restore rest time setting
-const savedRest=ls('rest_time','60秒');
-document.getElementById('set-rest-val').textContent=savedRest;
-timerSec=parseInt(savedRest);timerTotal=timerSec;updateTimerUI();
+// 设置页邮箱显示
+function updateSettingsEmail() {
+  const el = document.getElementById('set-email');
+  if (el && currentUser) el.textContent = currentUser.email || '';
+}
+// 监听页面切换到设置时更新
+const origGoTo = goTo;
+window.goTo = function(id, btn) {
+  origGoTo(id, btn);
+  if (id === 'settings') updateSettingsEmail();
+};
 </script>
 </body>
 </html>
