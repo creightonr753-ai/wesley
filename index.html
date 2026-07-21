@@ -1,1 +1,1672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wesley Go">
+<link rel="apple-touch-icon" href="icon.jpg">
+<link rel="icon" type="image/jpeg" href="icon.jpg">
+<title>Wesley Go</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  /* 暖色调橙金主题 */
+  --primary: #D97706;
+  --primary-d: #B45309;
+  --primary-l: #FEF3C7;
+  --primary-ll: #FFFBEB;
+  --fit: #EA580C;
+  --fit-l: #FFF7ED;
+  --fit-d: #C2410C;
+  --eng: #D97706;
+  --eng-l: #FEF3C7;
+  --eng-d: #B45309;
+  --green: #16A34A;
+  --green-l: #DCFCE7;
+  --red: #DC2626;
+  --red-l: #FEE2E2;
+  --purple: #7C3AED;
+  --bg: #FAFAF9;
+  --card: #FFFFFF;
+  --text: #1C1917;
+  --text2: #44403C;
+  --muted: #78716C;
+  --border: #E7E5E4;
+  --border2: #D6D3D1;
+  --tab-h: 58px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 44px);
+  --radius: 16px;
+  --shadow: 0 1px 8px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,"PingFang SC",sans-serif;background:var(--bg);color:var(--text);font-size:15px}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh}
 
+/* ── Auth Screen ── */
+#auth-screen{position:fixed;inset:0;z-index:999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;padding-top:calc(var(--safe-t) + 20px)}
+#auth-screen.hidden{display:none}
+.auth-logo{width:100px;height:100px;border-radius:24px;object-fit:cover;margin-bottom:20px;box-shadow:0 8px 32px rgba(217,119,6,.2)}
+.auth-brand{font-size:28px;font-weight:700;margin-bottom:6px;background:linear-gradient(135deg,var(--fit),var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.auth-sub{font-size:14px;color:var(--muted);margin-bottom:32px;text-align:center}
+.auth-input{width:100%;padding:14px 16px;border-radius:12px;border:1.5px solid var(--border);font-size:16px;font-family:inherit;outline:none;background:var(--bg);transition:border .15s}
+.auth-input:focus{border-color:var(--primary)}
+.pass-wrap{position:relative;width:100%;margin-bottom:10px}
+.pass-wrap .auth-input{width:100%;padding-right:48px;margin-bottom:0}
+.pass-eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);display:flex;align-items:center}
+.auth-err{font-size:13px;color:var(--red);text-align:center;min-height:18px;margin:6px 0}
+.auth-btn{width:100%;padding:15px;border-radius:14px;border:none;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:10px;transition:opacity .15s}
+.auth-btn:active{opacity:.85}
+.btn-primary{background:linear-gradient(135deg,var(--fit),var(--primary));color:#fff}
+.btn-google{background:#fff;color:var(--text);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:4px 0 14px;width:100%}
+.auth-divider span{font-size:12px;color:var(--muted);white-space:nowrap}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:.5px;background:var(--border)}
+.auth-toggle{font-size:13px;color:var(--muted);text-align:center;margin-top:6px}
+.auth-toggle b{color:var(--primary);cursor:pointer}
+
+/* ── Screens ── */
+.screen{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--tab-h) + var(--safe-b) + 12px)}
+.screen.active{display:block}
+
+/* ── Top bar ── */
+.tbar{padding:var(--safe-t) 20px 14px;position:sticky;top:0;z-index:50}
+.tbar.warm{background:linear-gradient(135deg,var(--fit-d),var(--primary))}
+.tbar.fit-theme{background:linear-gradient(135deg,#C2410C,#EA580C)}
+.tbar.eng-theme{background:linear-gradient(135deg,#B45309,#D97706)}
+.tbar.dark{background:#1C1917}
+.tbar.card-bg{background:var(--card);border-bottom:.5px solid var(--border)}
+.tbar h1{font-size:20px;font-weight:700;color:#fff}
+.tbar p{font-size:13px;color:rgba(255,255,255,.8);margin-top:2px}
+.tbar.card-bg h1{color:var(--text)}
+.tbar.card-bg p{color:var(--muted)}
+.tbar-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.back-btn{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* ── Tab bar ── */
+.tabbar{position:fixed;bottom:0;left:0;right:0;height:calc(var(--tab-h) + var(--safe-b));background:rgba(255,255,255,.95);border-top:.5px solid var(--border);display:flex;z-index:100;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding-bottom:var(--safe-b)}
+.titem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:none;cursor:pointer;color:var(--muted);font-family:inherit;padding:0;transition:color .15s}
+.titem.active{color:var(--primary)}
+.ticon{font-size:22px;line-height:1}
+.tlabel{font-size:10px;font-weight:500}
+
+/* ── Cards & layout ── */
+.sg{padding:16px}
+.sl{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:16px 0 8px}
+.card{background:var(--card);border-radius:var(--radius);border:.5px solid var(--border);box-shadow:var(--shadow);margin-bottom:12px}
+.cb{padding:14px 16px}
+.row-divider{border-bottom:.5px solid var(--border)}
+.row-divider:last-child{border-bottom:none}
+
+/* ── Home ── */
+.home-header{background:linear-gradient(135deg,var(--fit-d),var(--primary));padding:var(--safe-t) 20px 20px}
+.home-greeting{font-size:13px;color:rgba(255,255,255,.75);margin-bottom:2px}
+.home-name{font-size:22px;font-weight:700;color:#fff}
+.home-date{font-size:12px;color:rgba(255,255,255,.65);margin-top:2px}
+.user-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.18);border-radius:20px;padding:4px 12px 4px 4px;cursor:pointer;flex-shrink:0}
+.user-av{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0}
+.user-av img{width:100%;height:100%;object-fit:cover}
+.user-name-chip{font-size:12px;color:#fff;font-weight:500;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── Home dual cards ── */
+.zone-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px}
+.zone-card{border-radius:18px;padding:18px 14px;cursor:pointer;position:relative;overflow:hidden;min-height:160px;display:flex;flex-direction:column;justify-content:space-between;transition:transform .15s;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.zone-card:active{transform:scale(.97)}
+.zone-card.fit-card{background:linear-gradient(145deg,#EA580C,#F97316)}
+.zone-card.eng-card{background:linear-gradient(145deg,#D97706,#F59E0B)}
+.zone-title{font-size:18px;font-weight:700;color:#fff;margin-bottom:4px}
+.zone-sub{font-size:11px;color:rgba(255,255,255,.8);line-height:1.4}
+.zone-icon{font-size:36px;margin-bottom:8px}
+.zone-progress{margin-top:8px}
+.zone-prog-label{font-size:11px;color:rgba(255,255,255,.8);margin-bottom:4px}
+.zone-prog-bar{height:4px;background:rgba(255,255,255,.3);border-radius:2px;overflow:hidden}
+.zone-prog-fill{height:4px;background:#fff;border-radius:2px;transition:width .4s}
+.zone-tasks{font-size:11px;color:rgba(255,255,255,.9);margin-top:6px}
+.zone-badge{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.25);border-radius:10px;padding:3px 8px;font-size:10px;font-weight:600;color:#fff}
+
+/* ── Today summary ── */
+.today-card{margin:0 16px 12px;background:var(--card);border-radius:var(--radius);border:.5px solid var(--border);overflow:hidden}
+.today-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:.5px solid var(--border)}
+.today-row:last-child{border-bottom:none}
+.today-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.today-name{font-size:14px;font-weight:500;flex:1}
+.today-status{font-size:12px;color:var(--muted)}
+.today-done .today-name{color:var(--muted);text-decoration:line-through}
+.today-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.today-checked{background:var(--green);border-color:var(--green);color:#fff}
+
+/* ── Sub screens (fit/eng inner) ── */
+.stabs{display:flex;background:var(--card);border-bottom:.5px solid var(--border);overflow-x:auto;position:sticky;top:0;z-index:40}
+.stab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;font-family:inherit}
+.stab.fit-active{color:var(--fit);border-bottom-color:var(--fit)}
+.stab.eng-active{color:var(--eng);border-bottom-color:var(--eng)}
+.subpanel{display:none;padding:16px}
+.subpanel.active{display:block}
+
+/* ── Exercise items ── */
+.exitem{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:.5px solid var(--border);cursor:pointer}
+.exitem:last-child{border-bottom:none}
+.excheck{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;flex-shrink:0;transition:all .18s}
+.exitem.done .excheck{background:var(--green);border-color:var(--green)}
+.exitem.done .exname{text-decoration:line-through;color:var(--muted)}
+.exname{font-size:15px;font-weight:500}
+.exsets{font-size:12px;color:var(--muted);margin-top:2px}
+.extag{font-size:10px;padding:2px 8px;border-radius:10px;margin-left:auto;flex-shrink:0;font-weight:600}
+.tag-timer{background:var(--fit-l);color:var(--fit)}
+.tag-count{background:var(--eng-l);color:var(--eng-d)}
+
+/* ── Timer & Counter ── */
+.tool-card{background:var(--card);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;border:.5px solid var(--border)}
+.tool-inner{padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.tool-display{font-size:46px;font-weight:200;letter-spacing:2px;font-variant-numeric:tabular-nums;color:var(--text)}
+.tool-label{font-size:12px;color:var(--muted);margin-top:2px}
+.tool-btns{display:flex;gap:10px}
+.tbtn{width:46px;height:46px;border-radius:50%;border:none;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.tbtn-go{background:var(--green);color:#fff}
+.tbtn-rst{background:var(--bg);color:var(--muted)}
+.tbar-prog{height:3px;background:var(--border)}
+.tbar-fill{height:3px;background:var(--green);width:0%;transition:width .5s linear}
+.dur-btns{display:flex;gap:8px;margin-bottom:16px}
+.dur-btn{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);font-size:13px;cursor:pointer;font-family:inherit;color:var(--text2)}
+.dur-btn.active{border-color:var(--primary);background:var(--primary-l);color:var(--primary-d);font-weight:600}
+.counter-num{font-size:72px;font-weight:200;text-align:center;padding:16px 0 4px;letter-spacing:-2px;color:var(--text)}
+.counter-sub{text-align:center;font-size:13px;color:var(--muted);margin-bottom:12px}
+.counter-row{display:flex;padding:0 16px 14px;gap:10px}
+.counter-tap{width:100%;padding:18px;background:var(--primary-l);border:none;font-size:17px;font-weight:600;color:var(--primary-d);cursor:pointer;font-family:inherit}
+
+/* ── Calendar ── */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-nav{width:34px;height:34px;border-radius:50%;border:none;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--text)}
+.cal-title{font-size:16px;font-weight:700}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dn{text-align:center;font-size:11px;color:var(--muted);padding:4px 0;font-weight:500}
+.cal-cell{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border:none;background:none;font-family:inherit}
+.cal-cell.has-date{color:var(--text)}
+.cal-cell.trained{background:var(--fit);color:#fff}
+.cal-cell.trained-eng{background:var(--eng);color:#fff}
+.cal-cell.trained-both{background:linear-gradient(135deg,var(--fit),var(--eng));color:#fff}
+.cal-cell.today-cell{outline:2px solid var(--primary);outline-offset:1px}
+.cal-stats{display:flex;gap:10px;margin-top:12px}
+.cal-stat{flex:1;background:var(--bg);border-radius:10px;padding:10px;text-align:center}
+.cal-stat-num{font-size:24px;font-weight:700}
+.cal-stat-label{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── Exercise SVG cards ── */
+.excard{background:var(--card);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;border:.5px solid var(--border)}
+.exhead{padding:14px 16px 10px;display:flex;gap:12px;align-items:flex-start}
+.ed-meta{flex:1}
+.edbadge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:4px}
+.badge-chest{background:var(--fit-l);color:var(--fit)}
+.badge-abs{background:var(--green-l);color:var(--green)}
+.badge-cardio{background:var(--primary-l);color:var(--primary-d)}
+.edname{font-size:17px;font-weight:700}
+.edsets{font-size:13px;font-weight:600;margin-top:3px;color:var(--fit)}
+.edsvg{width:96px;height:74px;flex-shrink:0}
+.extip{background:var(--bg);padding:11px 16px;font-size:13px;color:var(--text2);line-height:1.65;border-top:.5px solid var(--border)}
+.extip b{color:var(--text)}
+
+/* ── English ── */
+.drill-card{background:var(--card);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;border:.5px solid var(--border)}
+.drill-phrase{font-size:22px;font-weight:700;padding:20px 16px 4px;line-height:1.4}
+.drill-phonetic{font-size:14px;color:var(--muted);padding:0 16px 8px}
+.drill-meaning{font-size:14px;color:var(--text2);padding:0 16px 12px;border-bottom:.5px solid var(--border)}
+.drill-tip{font-size:13px;color:var(--text2);padding:10px 16px;line-height:1.6}
+.drill-btns{display:flex;gap:10px;padding:12px 16px}
+.dbtn{flex:1;padding:12px;border-radius:12px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.dbtn-play{background:var(--primary-l);color:var(--primary-d)}
+.dbtn-next{background:linear-gradient(135deg,var(--fit),var(--primary));color:#fff}
+
+.chat-bubble{max-width:85%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.55;margin-bottom:10px}
+.bubble-ai{background:var(--card);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px;border:.5px solid var(--border)}
+.bubble-user{background:linear-gradient(135deg,var(--fit),var(--primary));color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.chat-list{display:flex;flex-direction:column;padding:16px}
+.chat-input-row{display:flex;gap:8px;padding:10px 16px;background:var(--card);border-top:.5px solid var(--border);position:sticky;bottom:calc(var(--tab-h) + var(--safe-b));z-index:30}
+.chat-input{flex:1;padding:10px 14px;border-radius:20px;border:1.5px solid var(--border);font-size:14px;font-family:inherit;outline:none;background:var(--bg)}
+.chat-input:focus{border-color:var(--primary)}
+.chat-send{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--fit),var(--primary));color:#fff;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-mic{width:40px;height:40px;border-radius:50%;background:var(--bg);border:1.5px solid var(--border);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-mic.recording{background:var(--red-l);border-color:var(--red);animation:pulse-mic .8s infinite}
+@keyframes pulse-mic{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.voice-hint{font-size:11px;color:var(--muted);text-align:center;padding:4px 0;display:none}
+.voice-hint.show{display:block}
+.typing-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite;margin:0 1px}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+/* ── Plan weeks ── */
+.wtabs{display:flex;gap:8px;flex-wrap:wrap;padding:4px 0 12px}
+.wtab{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:transparent;font-size:13px;color:var(--muted);font-family:inherit;cursor:pointer}
+.wtab.active{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:600}
+.prog-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:8px 0 4px}
+.prog-fill{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--fit),var(--primary));transition:width .4s}
+.planitem{display:flex;gap:10px;padding:9px 0;border-bottom:.5px solid var(--border);font-size:13px;color:var(--text2)}
+.planitem:last-child{border-bottom:none}
+
+/* ── Friends Leaderboard ── */
+.lb-header{background:linear-gradient(135deg,var(--fit-d),var(--primary));padding:var(--safe-t) 20px 20px}
+.lb-title{font-size:20px;font-weight:700;color:#fff}
+.lb-sub{font-size:13px;color:rgba(255,255,255,.75);margin-top:2px}
+.lb-month{font-size:12px;color:rgba(255,255,255,.6);margin-top:4px}
+.lb-podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;padding:16px 16px 8px}
+.podium-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
+.podium-avatar{width:52px;height:52px;border-radius:50%;background:var(--primary-l);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--primary-d);border:3px solid var(--border);overflow:hidden;position:relative}
+.podium-avatar img{width:100%;height:100%;object-fit:cover}
+.podium-item.rank-1 .podium-avatar{width:64px;height:64px;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-l)}
+.podium-crown{position:absolute;top:-14px;font-size:18px}
+.podium-name{font-size:12px;font-weight:600;color:var(--text);text-align:center;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.podium-days{font-size:11px;color:var(--muted)}
+.podium-block{border-radius:8px 8px 0 0;width:100%}
+.rank-1 .podium-block{height:60px;background:linear-gradient(135deg,var(--primary),var(--fit));color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700}
+.rank-2 .podium-block{height:44px;background:var(--border2);color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700}
+.rank-3 .podium-block{height:32px;background:var(--border);color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700}
+.lb-list{padding:0 16px 16px}
+.lb-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);border-radius:12px;margin-bottom:8px;border:.5px solid var(--border)}
+.lb-item.me{border-color:var(--primary);background:var(--primary-ll)}
+.lb-rank{width:28px;font-size:14px;font-weight:700;color:var(--muted);text-align:center;flex-shrink:0}
+.lb-rank.top3{color:var(--primary-d)}
+.lb-av{width:38px;height:38px;border-radius:50%;background:var(--primary-l);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--primary-d);flex-shrink:0;overflow:hidden}
+.lb-av img{width:100%;height:100%;object-fit:cover}
+.lb-info{flex:1;min-width:0}
+.lb-name{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-detail{font-size:12px;color:var(--muted);margin-top:2px}
+.lb-days{font-size:16px;font-weight:700;color:var(--primary-d);flex-shrink:0}
+.lb-days span{font-size:11px;color:var(--muted);font-weight:400}
+.lb-loading{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+.lb-me-bar{margin:0 16px 12px;background:var(--primary-ll);border:.5px solid var(--primary-l);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.lb-me-rank{font-size:22px;font-weight:700;color:var(--primary-d)}
+.lb-me-info{flex:1}
+.lb-me-label{font-size:12px;color:var(--primary-d);font-weight:600}
+.lb-me-sub{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* ── Diet ── */
+.meal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.meal-card{background:var(--bg);border-radius:12px;padding:12px;border:.5px solid var(--border)}
+.mtime{font-size:11px;color:var(--muted);margin-bottom:3px}
+.mname{font-size:13px;font-weight:700;margin-bottom:5px}
+.mitem{font-size:12px;color:var(--text2);padding:2px 0}
+.mitem::before{content:"·  "}
+
+/* ── Settings ── */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:.5px solid var(--border);cursor:pointer}
+.set-row:last-child{border-bottom:none}
+.set-label{font-size:15px}
+.set-val{font-size:14px;color:var(--muted)}
+.set-arrow{color:var(--muted);font-size:13px}
+.dev-zone{background:#1C1917;border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.dev-title{color:#F59E0B;font-size:13px;font-weight:700;margin-bottom:8px;font-family:monospace}
+.dev-desc{color:#78716C;font-size:12px;line-height:1.6;margin-bottom:12px;font-family:monospace}
+.dev-textarea{width:100%;height:160px;background:#292524;color:#F5F5F4;border:1px solid #44403C;border-radius:10px;padding:12px;font-size:12px;font-family:monospace;resize:vertical;outline:none}
+.dev-textarea:focus{border-color:#F59E0B}
+.dev-btn{width:100%;padding:12px;background:#F59E0B;color:#000;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px}
+.plugin-output{margin-top:12px}
+
+.tipbox{background:var(--primary-l);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--primary-d);line-height:1.6;margin-bottom:12px}
+.warnbox{background:var(--red-l);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--red);line-height:1.6;margin-bottom:12px}
+.prow{display:flex;gap:10px;padding:12px 0;border-bottom:.5px solid var(--border)}
+.prow:last-child{border-bottom:none}
+.picon{font-size:20px;flex-shrink:0}
+.ptitle{font-size:14px;font-weight:600;margin-bottom:2px}
+.pdesc{font-size:12px;color:var(--muted);line-height:1.5}
+.eng-week{background:var(--card);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;border:.5px solid var(--border)}
+.eng-week-head{padding:14px 16px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.eng-week-num{width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.eng-week-title{font-size:15px;font-weight:600;flex:1}
+.eng-week-body{padding:0 16px 14px;display:none}
+.eng-week-body.open{display:block}
+.eng-task{display:flex;gap:8px;padding:7px 0;border-bottom:.5px solid var(--border);font-size:13px;color:var(--text2)}
+.eng-task:last-child{border-bottom:none}
+.btn-primary-full{width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--fit),var(--primary));color:#fff;border:none;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:10px}
+.pb{height:20px}
+
+/* ── Assessment ── */
+.assess-opt{width:100%;padding:14px 16px;border-radius:12px;border:1.5px solid var(--border);background:#fff;font-size:14px;text-align:left;cursor:pointer;font-family:inherit;transition:all .15s;color:var(--text)}
+.assess-opt:active,.assess-opt.selected{background:var(--primary-l);border-color:var(--primary);color:var(--primary-d);font-weight:600}
+.assess-next{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--fit-d),var(--primary));color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:16px}
+.assess-dot{width:8px;height:8px;border-radius:50%;background:var(--border)}
+.assess-dot.active{background:var(--primary)}
+
+/* ── Level badge ── */
+.level-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700}
+.lv-0{background:#F1F5F9;color:#64748B} /* 小白 */
+.lv-1{background:#DCFCE7;color:#16A34A} /* 新手 */
+.lv-2{background:#DBEAFE;color:#2563EB} /* 入门 */
+.lv-3{background:#FEF3C7;color:#D97706} /* 达人 */
+.lv-4{background:#FED7AA;color:#EA580C} /* 前辈 */
+.lv-5{background:#F3E8FF;color:#7C3AED} /* 巨头 */
+
+/* ── Split cards ── */
+.split-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card);border-radius:14px;border:1.5px solid var(--border);cursor:pointer;transition:all .15s}
+.split-card.selected{border-color:var(--primary);background:var(--primary-ll)}
+.split-icon{font-size:28px;flex-shrink:0}
+.split-body{flex:1}
+.split-title{font-size:14px;font-weight:600;color:var(--text)}
+.split-desc{font-size:12px;color:var(--muted);margin-top:2px}
+.split-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;color:#fff}
+.split-check.selected{background:var(--primary);border-color:var(--primary)}
+
+/* ── Muscle tabs ── */
+.muscle-tab{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:13px;color:var(--muted);font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.muscle-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:600}
+
+/* ── Exercise library cards with animation ── */
+.ex-lib-card{background:var(--card);border-radius:16px;margin-bottom:14px;overflow:hidden;border:.5px solid var(--border);box-shadow:var(--shadow)}
+.ex-lib-head{padding:14px 16px 0;display:flex;gap:12px;align-items:flex-start}
+.ex-lib-meta{flex:1}
+.ex-anim-wrap{width:110px;height:84px;flex-shrink:0;background:var(--bg);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.ex-lib-name{font-size:17px;font-weight:700;margin:4px 0 2px}
+.ex-lib-sets{font-size:12px;color:var(--fit);font-weight:600}
+.ex-muscle-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.muscle-tag{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--primary-l);color:var(--primary-d);font-weight:500}
+.ex-lib-tip{background:var(--bg);padding:10px 16px;font-size:12px;color:var(--text2);line-height:1.6;border-top:.5px solid var(--border);margin-top:10px}
+.ex-lib-tip b{color:var(--text)}
+
+/* ── Animated SVG ── */
+@keyframes pushup-down{0%,100%{transform:translateY(0)}50%{transform:translateY(14px)}}
+@keyframes pushup-arm{0%,100%{transform:rotate(0deg)}50%{transform:rotate(25deg)}}
+@keyframes plank-wobble{0%,100%{opacity:1}50%{opacity:.6}}
+@keyframes crunch-up{0%,100%{transform:rotate(0deg)}40%,60%{transform:rotate(-22deg)}}
+@keyframes leg-raise{0%,100%{transform:rotate(0deg)}45%,55%{transform:rotate(-75deg)}}
+@keyframes burpee{0%{transform:translateY(0) scaleY(1)}25%{transform:translateY(8px) scaleY(.7)}50%{transform:translateY(0) scaleY(1) rotate(5deg)}75%{transform:translateY(-6px) scaleY(1.1)}100%{transform:translateY(0) scaleY(1)}}
+@keyframes squat{0%,100%{transform:translateY(0)}50%{transform:translateY(12px)}}
+@keyframes lunge-step{0%,100%{transform:translateX(0)}50%{transform:translateX(8px)}}
+@keyframes pullup{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes shoulder-press{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes mountain-climber{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+
+.anim-body{animation:pushup-down 1.8s ease-in-out infinite}
+.anim-plank{animation:plank-wobble 2s ease-in-out infinite}
+.anim-crunch{animation:crunch-up 2s ease-in-out infinite;transform-origin:70px 54px}
+.anim-legr{animation:leg-raise 2s ease-in-out infinite;transform-origin:80px 55px}
+.anim-burp{animation:burpee 2.4s ease-in-out infinite}
+.anim-squat{animation:squat 1.8s ease-in-out infinite}
+.anim-pull{animation:pullup 2s ease-in-out infinite}
+.anim-press{animation:shoulder-press 1.8s ease-in-out infinite}
+.anim-mc{animation:mountain-climber 0.6s ease-in-out infinite}
+
+/* ── Today workout ── */
+.today-session-card{background:var(--card);border-radius:16px;margin-bottom:12px;overflow:hidden;border:.5px solid var(--border)}
+.session-head{padding:14px 16px;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(234,88,12,.08),rgba(217,119,6,.08))}
+.session-num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--fit),var(--primary));color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.session-title{font-size:15px;font-weight:700;flex:1}
+.session-meta{font-size:12px;color:var(--muted)}
+.today-ex-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:.5px solid var(--border);cursor:pointer}
+.today-ex-row:last-child{border-bottom:none}
+.tex-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;flex-shrink:0;transition:all .18s}
+.tex-done .tex-check{background:var(--green);border-color:var(--green)}
+.tex-done .tex-name{text-decoration:line-through;color:var(--muted)}
+.tex-name{font-size:14px;font-weight:500}
+.tex-sets{font-size:12px;color:var(--muted);margin-top:1px}
+.tex-tag{font-size:10px;padding:2px 7px;border-radius:8px;margin-left:auto;flex-shrink:0;font-weight:600}
+.week-day-plan{background:var(--bg);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.wdp-day{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.wdp-label{font-size:13px;font-weight:500;color:var(--text)}
+.wdp-rest{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══════ 登录页 ══════ -->
+<div id="auth-screen">
+  <img src="icon.jpg" class="auth-logo" onerror="this.style.display='none'">
+  <div class="auth-brand">Wesley Go</div>
+  <div class="auth-sub">健身 · 英语 · 成长</div>
+  <div style="width:100%">
+    <div class="auth-err" id="auth-err"></div>
+    <input class="auth-input" style="margin-bottom:10px" id="auth-email" type="email" placeholder="邮箱地址">
+    <div class="pass-wrap">
+      <input class="auth-input" id="auth-pass" type="password" placeholder="密码（6位以上）">
+      <button class="pass-eye" onclick="togglePassView()" type="button">
+        <svg id="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+    <button class="auth-btn btn-primary" onclick="authSubmit()" id="auth-submit-btn" style="margin-top:12px">登录</button>
+    <div class="auth-divider"><span>或</span></div>
+    <button class="auth-btn btn-google" onclick="authGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+      用 Google 账号登录
+    </button>
+    <div class="auth-toggle">还没有账号？<b onclick="toggleAuthMode()">立即注册</b></div>
+  </div>
+</div>
+
+<!-- ══════ 首页 ══════ -->
+<div class="screen active" id="s-home">
+  <div class="home-header">
+    <div class="tbar-row">
+      <div>
+        <div class="home-greeting">早上好 👋</div>
+        <div class="home-name" id="home-name">Wesley</div>
+        <div class="home-date" id="home-date"></div>
+      </div>
+      <div class="user-chip" onclick="showUserMenu()">
+        <div class="user-av" id="user-av">W</div>
+        <div class="user-name-chip" id="user-name-chip">我</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 两大分区卡片 -->
+  <div class="zone-grid">
+    <div class="zone-card fit-card" onclick="goTo('fit',document.querySelectorAll('.titem')[1])">
+      <div>
+        <div class="zone-icon">💪</div>
+        <div class="zone-title">健身训练</div>
+        <div class="zone-sub">无器械居家 · 5周递进计划</div>
+      </div>
+      <div class="zone-progress">
+        <div class="zone-prog-label" id="fit-zone-label">本周 0/6 天</div>
+        <div class="zone-prog-bar"><div class="zone-prog-fill" id="fit-zone-fill" style="width:0%"></div></div>
+        <div class="zone-tasks" id="fit-zone-tasks">今日：胸肌 + 腹肌</div>
+      </div>
+      <div class="zone-badge" id="fit-zone-badge">▸ 开始</div>
+    </div>
+    <div class="zone-card eng-card" onclick="goTo('eng',document.querySelectorAll('.titem')[1])">
+      <div>
+        <div class="zone-icon">📚</div>
+        <div class="zone-title">英语学习</div>
+        <div class="zone-sub">口语为核心 · 8周提升</div>
+      </div>
+      <div class="zone-progress">
+        <div class="zone-prog-label" id="eng-zone-label">本周 0/7 天</div>
+        <div class="zone-prog-bar"><div class="zone-prog-fill" id="eng-zone-fill" style="width:0%"></div></div>
+        <div class="zone-tasks">今日：跟读 + AI陪练</div>
+      </div>
+      <div class="zone-badge" id="eng-zone-badge">▸ 开始</div>
+    </div>
+  </div>
+
+  <!-- 今日任务摘要 -->
+  <div style="padding:0 16px">
+    <div class="sl">今日任务</div>
+  </div>
+  <div class="today-card">
+    <div class="today-row" id="task-fit" onclick="toggleTodayTask('fit')">
+      <div class="today-dot" style="background:var(--fit)"></div>
+      <div style="flex:1">
+        <div class="today-name" id="task-fit-name">健身训练</div>
+        <div class="today-status" id="task-fit-status">胸肌 + 腹肌 · 约40分钟</div>
+      </div>
+      <div class="today-check" id="task-fit-check"></div>
+    </div>
+    <div class="today-row" id="task-drill" onclick="toggleTodayTask('drill')">
+      <div class="today-dot" style="background:var(--eng)"></div>
+      <div style="flex:1">
+        <div class="today-name" id="task-drill-name">跟读练习</div>
+        <div class="today-status">今日 6 个口语句型</div>
+      </div>
+      <div class="today-check" id="task-drill-check"></div>
+    </div>
+    <div class="today-row" id="task-ai" onclick="toggleTodayTask('ai')">
+      <div class="today-dot" style="background:var(--purple)"></div>
+      <div style="flex:1">
+        <div class="today-name" id="task-ai-name">AI 陪练对话</div>
+        <div class="today-status">5 轮英语口语对话</div>
+      </div>
+      <div class="today-check" id="task-ai-check"></div>
+    </div>
+  </div>
+
+  <div class="pb"></div>
+</div>
+
+<!-- ══════ 健身 ══════ -->
+<div class="screen" id="s-fit">
+
+  <!-- ══ 等级评估弹窗 ══ -->
+  <div id="fit-assess-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;overflow-y:auto;padding:20px">
+    <div style="background:#fff;border-radius:20px;max-width:480px;margin:auto;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#C2410C,#EA580C);padding:20px 20px 16px">
+        <div style="font-size:18px;font-weight:700;color:#fff">💪 健身等级评估</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:4px">5个问题，AI为你匹配最适合的训练计划</div>
+      </div>
+      <div style="padding:20px" id="assess-body">
+        <div id="assess-step-1">
+          <div style="font-size:15px;font-weight:600;margin-bottom:16px">Q1. 你目前每周运动频率？</div>
+          <div id="q1-opts" style="display:flex;flex-direction:column;gap:10px">
+            <button class="assess-opt" onclick="selectOpt('q1',0,this)">几乎不运动</button>
+            <button class="assess-opt" onclick="selectOpt('q1',1,this)">偶尔运动（每月1-2次）</button>
+            <button class="assess-opt" onclick="selectOpt('q1',2,this)">每周1-2次</button>
+            <button class="assess-opt" onclick="selectOpt('q1',3,this)">每周3-4次</button>
+            <button class="assess-opt" onclick="selectOpt('q1',4,this)">每周5次以上</button>
+          </div>
+          <button class="assess-next" onclick="assessNext(1)" style="display:none" id="next-1">下一题 →</button>
+        </div>
+        <div id="assess-step-2" style="display:none">
+          <div style="font-size:15px;font-weight:600;margin-bottom:16px">Q2. 你能连续做多少个俯卧撑？</div>
+          <div id="q2-opts" style="display:flex;flex-direction:column;gap:10px">
+            <button class="assess-opt" onclick="selectOpt('q2',0,this)">做不了 / 不到3个</button>
+            <button class="assess-opt" onclick="selectOpt('q2',1,this)">3-8个</button>
+            <button class="assess-opt" onclick="selectOpt('q2',2,this)">8-15个</button>
+            <button class="assess-opt" onclick="selectOpt('q2',3,this)">15-25个</button>
+            <button class="assess-opt" onclick="selectOpt('q2',4,this)">25个以上</button>
+          </div>
+          <button class="assess-next" onclick="assessNext(2)" style="display:none" id="next-2">下一题 →</button>
+        </div>
+        <div id="assess-step-3" style="display:none">
+          <div style="font-size:15px;font-weight:600;margin-bottom:16px">Q3. 你的主要训练目标？</div>
+          <div id="q3-opts" style="display:flex;flex-direction:column;gap:10px">
+            <button class="assess-opt" onclick="selectOpt('q3',0,this)">减脂瘦身</button>
+            <button class="assess-opt" onclick="selectOpt('q3',1,this)">增肌塑形</button>
+            <button class="assess-opt" onclick="selectOpt('q3',2,this)">提升体能</button>
+            <button class="assess-opt" onclick="selectOpt('q3',3,this)">综合提升</button>
+          </div>
+          <button class="assess-next" onclick="assessNext(3)" style="display:none" id="next-3">下一题 →</button>
+        </div>
+        <div id="assess-step-4" style="display:none">
+          <div style="font-size:15px;font-weight:600;margin-bottom:16px">Q4. 每次训练可以投入多少时间？</div>
+          <div id="q4-opts" style="display:flex;flex-direction:column;gap:10px">
+            <button class="assess-opt" onclick="selectOpt('q4',0,this)">20-30分钟</button>
+            <button class="assess-opt" onclick="selectOpt('q4',1,this)">30-45分钟</button>
+            <button class="assess-opt" onclick="selectOpt('q4',2,this)">45-60分钟</button>
+            <button class="assess-opt" onclick="selectOpt('q4',3,this)">60分钟以上</button>
+          </div>
+          <button class="assess-next" onclick="assessNext(4)" style="display:none" id="next-4">下一题 →</button>
+        </div>
+        <div id="assess-step-5" style="display:none">
+          <div style="font-size:15px;font-weight:600;margin-bottom:16px">Q5. 你有没有器械？</div>
+          <div id="q5-opts" style="display:flex;flex-direction:column;gap:10px">
+            <button class="assess-opt" onclick="selectOpt('q5',0,this)">完全无器械</button>
+            <button class="assess-opt" onclick="selectOpt('q5',1,this)">有弹力带</button>
+            <button class="assess-opt" onclick="selectOpt('q5',2,this)">有哑铃</button>
+            <button class="assess-opt" onclick="selectOpt('q5',3,this)">有哑铃+其他器械</button>
+          </div>
+          <button class="assess-next" onclick="calcLevel()" style="display:none" id="next-5">🤖 AI评估结果</button>
+        </div>
+        <div id="assess-result" style="display:none;text-align:center;padding:20px 0">
+          <div style="font-size:48px;margin-bottom:8px" id="level-emoji"></div>
+          <div style="font-size:24px;font-weight:700;color:var(--fit)" id="level-name"></div>
+          <div style="font-size:14px;color:var(--muted);margin:8px 0 20px;line-height:1.6" id="level-desc"></div>
+          <div style="display:flex;gap:8px;margin-bottom:16px">
+            <div style="flex:1;background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:18px;font-weight:700;color:var(--fit)" id="res-sets">3组</div>
+              <div style="font-size:11px;color:var(--muted)">每组数量</div>
+            </div>
+            <div style="flex:1;background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:18px;font-weight:700;color:var(--fit)" id="res-rest">60秒</div>
+              <div style="font-size:11px;color:var(--muted)">组间休息</div>
+            </div>
+            <div style="flex:1;background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:18px;font-weight:700;color:var(--fit)" id="res-days">4天</div>
+              <div style="font-size:11px;color:var(--muted)">每周训练</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button onclick="adjustLevel(-1)" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:#fff;font-size:13px;cursor:pointer;font-family:inherit">↓ 降一级</button>
+            <button onclick="confirmLevel()" style="flex:2;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--fit-d),var(--primary));color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">✓ 确认开始训练</button>
+            <button onclick="adjustLevel(1)" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:#fff;font-size:13px;cursor:pointer;font-family:inherit">↑ 升一级</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:4px;margin-top:16px;justify-content:center" id="assess-dots">
+          <div class="assess-dot active"></div><div class="assess-dot"></div><div class="assess-dot"></div><div class="assess-dot"></div><div class="assess-dot"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 主界面 ══ -->
+  <div class="tbar fit-theme">
+    <div class="tbar-row">
+      <div>
+        <h1>💪 健身训练</h1>
+        <p id="fit-level-tag">加载中...</p>
+      </div>
+      <button onclick="showAssess()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:20px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600">重新评估</button>
+    </div>
+  </div>
+
+  <div class="stabs">
+    <button class="stab fit-active" onclick="fitTab('today',this)">今日训练</button>
+    <button class="stab" onclick="fitTab('split',this)">训练分化</button>
+    <button class="stab" onclick="fitTab('library',this)">动作库</button>
+    <button class="stab" onclick="fitTab('tools',this)">计时/计数</button>
+    <button class="stab" onclick="fitTab('calendar',this)">打卡月历</button>
+  </div>
+
+  <!-- 今日训练 -->
+  <div class="subpanel active" id="fit-today">
+    <div id="fit-today-content"></div>
+    <div class="pb"></div>
+  </div>
+
+  <!-- 训练分化选择 -->
+  <div class="subpanel" id="fit-split">
+    <div class="sl">选择训练分化方案</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      <div class="split-card" onclick="setSplit('full',this)" id="split-full">
+        <div class="split-icon">🔥</div>
+        <div class="split-body">
+          <div class="split-title">全身训练（每次）</div>
+          <div class="split-desc">每次覆盖全身主要肌群，适合新手 · 每周3天</div>
+        </div>
+        <div class="split-check" id="sc-full"></div>
+      </div>
+      <div class="split-card" onclick="setSplit('push_pull',this)" id="split-push_pull">
+        <div class="split-icon">💪</div>
+        <div class="split-body">
+          <div class="split-title">二分化：推 / 拉</div>
+          <div class="split-desc">推（胸·肩·三头）/ 拉（背·二头·腿）· 每周4天</div>
+        </div>
+        <div class="split-check" id="sc-push_pull"></div>
+      </div>
+      <div class="split-card selected" onclick="setSplit('ppl',this)" id="split-ppl">
+        <div class="split-icon">🏆</div>
+        <div class="split-body">
+          <div class="split-title">三分化：胸肩三头 / 背二头 / 腿核心</div>
+          <div class="split-desc">经典增肌方案，覆盖最全面 · 每周5-6天</div>
+        </div>
+        <div class="split-check selected" id="sc-ppl">✓</div>
+      </div>
+      <div class="split-card" onclick="setSplit('upper_lower',this)" id="split-upper_lower">
+        <div class="split-icon">⚡</div>
+        <div class="split-body">
+          <div class="split-title">四分化：上肢 / 下肢</div>
+          <div class="split-desc">上肢推拉分开，下肢专项 · 每周4-5天</div>
+        </div>
+        <div class="split-check" id="sc-upper_lower"></div>
+      </div>
+    </div>
+    <div class="sl">本周训练安排</div>
+    <div id="split-weekly-plan"></div>
+    <div class="pb"></div>
+  </div>
+
+  <!-- 动作库 -->
+  <div class="subpanel" id="fit-library">
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px" id="muscle-tabs">
+      <button class="muscle-tab active" onclick="filterMuscle('all',this)">全部</button>
+      <button class="muscle-tab" onclick="filterMuscle('chest',this)">胸肌</button>
+      <button class="muscle-tab" onclick="filterMuscle('back',this)">背肌</button>
+      <button class="muscle-tab" onclick="filterMuscle('shoulder',this)">肩部</button>
+      <button class="muscle-tab" onclick="filterMuscle('arm',this)">手臂</button>
+      <button class="muscle-tab" onclick="filterMuscle('core',this)">核心</button>
+      <button class="muscle-tab" onclick="filterMuscle('leg',this)">腿部</button>
+      <button class="muscle-tab" onclick="filterMuscle('cardio',this)">有氧</button>
+    </div>
+    <div id="exercise-library"></div>
+    <div class="pb"></div>
+  </div>
+
+  <!-- 计时/计数 -->
+  <div class="subpanel" id="fit-tools">
+    <p style="font-size:12px;font-weight:600;color:var(--muted);padding-bottom:10px;text-transform:uppercase;letter-spacing:.04em">倒计时器</p>
+    <div class="tool-card">
+      <div class="tool-inner">
+        <div>
+          <div class="tool-display" id="timer-disp">01:00</div>
+          <div class="tool-label">组间休息 / 静态动作计时</div>
+        </div>
+        <div class="tool-btns">
+          <button class="tbtn tbtn-rst" onclick="resetTimer()">↺</button>
+          <button class="tbtn tbtn-go" id="timer-btn" onclick="toggleTimer()">▶</button>
+        </div>
+      </div>
+      <div class="tbar-prog"><div class="tbar-fill" id="timer-prog"></div></div>
+    </div>
+    <div class="dur-btns">
+      <button class="dur-btn" onclick="setTimerDur(30,this)">30秒</button>
+      <button class="dur-btn" onclick="setTimerDur(45,this)">45秒</button>
+      <button class="dur-btn active" onclick="setTimerDur(60,this)">60秒</button>
+      <button class="dur-btn" onclick="setTimerDur(90,this)">90秒</button>
+    </div>
+    <p style="font-size:12px;font-weight:600;color:var(--muted);padding-bottom:10px;text-transform:uppercase;letter-spacing:.04em">计数器</p>
+    <div class="tool-card">
+      <div class="counter-num" id="counter-num">0</div>
+      <div class="counter-sub" id="counter-sub">第 1 组 · 目标 15 个</div>
+      <div class="counter-row">
+        <button class="tbtn" onclick="counterChange(-1)" style="flex:1;border-radius:12px;width:auto;height:44px;background:var(--red-l);color:var(--red);font-size:22px">－</button>
+        <button class="tbtn tbtn-rst" onclick="resetCounter()" style="flex:1;border-radius:12px;width:auto;height:44px;font-size:13px">重置</button>
+        <button onclick="nextSet()" style="flex:1;border-radius:12px;border:none;background:var(--primary-l);color:var(--primary-d);font-size:13px;font-weight:600;cursor:pointer;height:44px;font-family:inherit">下一组</button>
+      </div>
+      <button class="counter-tap" onclick="counterChange(1)">点击计数 +1</button>
+    </div>
+    <div class="pb"></div>
+  </div>
+
+  <!-- 打卡月历 -->
+  <div class="subpanel" id="fit-calendar">
+    <div class="card cb">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="calMove(-1)">‹</button>
+        <div class="cal-title" id="cal-title"></div>
+        <button class="cal-nav" onclick="calMove(1)">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-stats">
+        <div class="cal-stat"><div class="cal-stat-num" id="cal-fit-count" style="color:var(--fit)">0</div><div class="cal-stat-label">健身天数</div></div>
+        <div class="cal-stat"><div class="cal-stat-num" id="cal-eng-count" style="color:var(--eng)">0</div><div class="cal-stat-label">英语天数</div></div>
+        <div class="cal-stat"><div class="cal-stat-num" id="cal-both-count" style="color:var(--purple)">0</div><div class="cal-stat-label">双打卡</div></div>
+      </div>
+    </div>
+    <div class="tipbox">💡 点击日期可手动补打卡</div>
+    <div class="pb"></div>
+  </div>
+</div>
+
+<!-- ══════ 英语 ══════ -->
+<div class="screen" id="s-eng">
+  <div class="tbar eng-theme"><h1>📚 英语学习</h1><p>口语为核心 · 跟读 + AI陪练</p></div>
+  <div class="stabs">
+    <button class="stab eng-active" onclick="engTab('drill',this)">跟读练习</button>
+    <button class="stab" onclick="engTab('ai',this)">AI 陪练</button>
+    <button class="stab" onclick="engTab('engplan',this)">学习计划</button>
+  </div>
+  <div class="subpanel active" id="eng-drill">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">今日口语句型</div>
+      <div style="font-size:12px;color:var(--eng)" id="drill-progress">1 / 6</div>
+    </div>
+    <div class="drill-card">
+      <div class="drill-phrase" id="drill-phrase">How's it going?</div>
+      <div class="drill-phonetic" id="drill-phonetic">/haʊz ɪt ˈɡoʊɪŋ/</div>
+      <div class="drill-meaning" id="drill-meaning">最近怎么样？/ 一切还好吗？</div>
+      <div class="drill-tip" id="drill-tip"><b>使用场景：</b>见到朋友或同事时的日常问候，比 How are you 更口语化。<br><b>常见回答：</b>"Pretty good!" / "Not bad, you?"<br><b>跟读要点：</b>语调先升后降，整句连读流畅。</div>
+      <div class="drill-btns">
+        <button class="dbtn dbtn-play" onclick="speakPhrase()">🔊 朗读</button>
+        <button class="dbtn dbtn-next" onclick="nextDrill()">下一句 →</button>
+      </div>
+    </div>
+    <div class="card"><div style="padding:14px 16px 8px;font-size:14px;font-weight:600">今日单词卡</div><div id="word-list"></div></div>
+    <div class="pb"></div>
+  </div>
+
+  <div class="subpanel" id="eng-ai" style="padding:0">
+    <div style="padding:12px 16px 0"><div class="tipbox" style="margin-bottom:10px">🤖 <b>AI陪练：</b>用英语对话，AI会自动纠错并给出更地道的表达。</div></div>
+    <div id="chat-messages" style="min-height:200px">
+      <div class="chat-list" id="chat-list">
+        <div class="chat-bubble bubble-ai">Hi there! 👋 I'm your English practice partner. Let's have a conversation!<br><br><b>Let's start:</b> Can you tell me about your typical day? What do you usually do in the morning?</div>
+      </div>
+    </div>
+    <div style="position:sticky;bottom:calc(var(--tab-h) + var(--safe-b));z-index:30;background:var(--card);border-top:.5px solid var(--border)">
+      <div class="chat-input-row" style="border-top:none">
+        <button class="chat-mic" id="mic-btn" onclick="toggleVoice()">🎤</button>
+        <input class="chat-input" id="chat-input" type="text" placeholder="开口说 或 打字输入..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="chat-send" id="chat-send-btn" onclick="sendChat()">↑</button>
+      </div>
+      <div class="voice-hint" id="voice-hint">🔴 正在听... 说完后点麦克风停止</div>
+    </div>
+    <div class="pb"></div>
+  </div>
+
+  <div class="subpanel" id="eng-engplan">
+    <div class="tipbox">目标：<b>能流畅看懂英文影视，日常口语对话自信开口。</b></div>
+    <div id="eng-plan-list"></div>
+    <div class="pb"></div>
+  </div>
+</div>
+
+<!-- ══════ 朋友排行榜 ══════ -->
+<div class="screen" id="s-friends">
+  <div class="lb-header">
+    <div class="lb-title">🏆 打卡排行榜</div>
+    <div class="lb-sub">看看谁最努力！</div>
+    <div class="lb-month" id="lb-month"></div>
+  </div>
+  <div id="lb-me-bar"></div>
+  <div class="lb-podium" id="lb-podium"></div>
+  <div class="lb-list" id="lb-list">
+    <div class="lb-loading">加载中...</div>
+  </div>
+  <div class="pb"></div>
+</div>
+
+<!-- ══════ 个人设置 ══════ -->
+<div class="screen" id="s-settings">
+  <div class="tbar dark"><h1>⚙️ 个人设置</h1><p>账号 · 偏好 · 开发者</p></div>
+  <div class="sg">
+    <div class="sl">账号信息</div>
+    <div class="card">
+      <div class="set-row"><span class="set-label">当前账号</span><span class="set-val" id="set-email" style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis">-</span></div>
+      <div class="set-row" onclick="supa.auth.signOut()"><span class="set-label" style="color:var(--red)">退出登录</span><span class="set-arrow">›</span></div>
+    </div>
+    <div class="sl">训练设置</div>
+    <div class="card">
+      <div class="set-row" onclick="setRestTime()">
+        <span class="set-label">组间休息时长</span>
+        <span><span class="set-val" id="set-rest-val">60 秒</span> <span class="set-arrow">›</span></span>
+      </div>
+      <div class="set-row" onclick="clearWeekData()"><span class="set-label">重置本周打卡</span><span class="set-arrow">›</span></div>
+      <div class="set-row" onclick="clearAllData()"><span class="set-label" style="color:var(--red)">清除全部数据</span><span class="set-arrow">›</span></div>
+    </div>
+    <div class="sl">开发者模式</div>
+    <div class="dev-zone">
+      <div class="dev-title">🔌 插件注入区 v3.0</div>
+      <div class="dev-desc">将 Claude 生成的新功能代码粘贴到下方，点击注入即可生效。</div>
+      <textarea class="dev-textarea" id="plugin-input" placeholder="<!-- 粘贴 Claude 生成的插件代码 -->"></textarea>
+      <button class="dev-btn" onclick="injectPlugin()">⚡ 注入功能</button>
+      <button class="dev-btn" onclick="clearPlugins()" style="background:#44403C;color:#fff;margin-top:6px">🗑 清除插件</button>
+    </div>
+    <div class="sl">已安装插件</div>
+    <div id="plugin-output"><div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">暂无已安装插件</div></div>
+  </div>
+  <div class="pb"></div>
+</div>
+
+<!-- ══════ 底部导航 ══════ -->
+<div class="tabbar">
+  <button class="titem active" onclick="goTo('home',this)"><div class="ticon">🏠</div><div class="tlabel">首页</div></button>
+  <button class="titem" onclick="goTo('fit',this);goTo('eng',this)" id="tab-content" style="display:none"></button>
+  <button class="titem" onclick="goToFriends(this)"><div class="ticon">🏆</div><div class="tlabel">排行榜</div></button>
+  <button class="titem" onclick="goTo('settings',this)"><div class="ticon">👤</div><div class="tlabel">我的</div></button>
+</div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════
+// Supabase
+// ══════════════════════════════════════
+const SUPA_URL = 'https://cykhozggaipjkccmyfpc.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5a2hvemdnYWlwamtjY215ZnBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1OTE3MzUsImV4cCI6MjEwMDE2NzczNX0.ikLexrUa9ky2INzEdQl2PKfLxQ02u6vCHvGMfEH9Bhc';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { autoRefreshToken:true, persistSession:true, detectSessionInUrl:true } });
+let currentUser = null;
+let authMode = 'login';
+
+// ══════════════════════════════════════
+// 数据
+// ══════════════════════════════════════
+const todayIdx = (new Date().getDay() + 6) % 7;
+// ══════════════════════════════════════
+// 等级系统
+// ══════════════════════════════════════
+const LEVELS = [
+  {id:0,name:'小白',emoji:'🌱',color:'#64748B',sets:2,reps:'8-10',rest:90,days:3,desc:'从零开始，专注动作规范，建立运动习惯'},
+  {id:1,name:'新手',emoji:'💪',color:'#16A34A',sets:3,reps:'10-12',rest:75,days:4,desc:'有一定基础，逐步增加训练量'},
+  {id:2,name:'入门',emoji:'🔥',color:'#2563EB',sets:3,reps:'12-15',rest:60,days:4,desc:'掌握基础动作，开始感受肌肉泵感'},
+  {id:3,name:'达人',emoji:'⚡',color:'#D97706',sets:4,reps:'15-20',rest:45,days:5,desc:'训练稳定，引入超级组和复合动作'},
+  {id:4,name:'前辈',emoji:'🏆',color:'#EA580C',sets:4,reps:'20+/力竭',rest:30,days:5,desc:'高强度训练，追求极限体能'},
+  {id:5,name:'巨头',emoji:'👑',color:'#7C3AED',sets:5,reps:'力竭组',rest:20,days:6,desc:'精英水平，全面分化高频训练'}
+];
+
+const SPLITS = {
+  full:{name:'全身训练',days:3,
+    schedule:['全身A','休息','全身B','休息','全身C','休息','休息'],
+    plans:{'全身A':['标准俯卧撑','深蹲','平板支撑','二头弯举','三头撑'],'全身B':['宽距俯卧撑','弓步蹲','卷腹','肩上推举','俯身划船'],'全身C':['钻石俯卧撑','臀桥','腿部举起','侧平举','波比跳']}},
+  push_pull:{name:'推/拉二分化',days:4,
+    schedule:['推（胸·肩·三头）','拉（背·二头）','休息','推（胸·肩·三头）','拉（背·二头）','休息','休息'],
+    plans:{'推（胸·肩·三头）':['标准俯卧撑','宽距俯卧撑','钻石俯卧撑','肩上推举','三头撑'],'拉（背·二头）':['引体向上','俯身划船','背部伸展','二头弯举','侧平举']}},
+  ppl:{name:'推拉腿三分化',days:5,
+    schedule:['推（胸·肩·三头）','拉（背·二头）','腿·核心','休息','推（胸·肩·三头）','拉（背·二头）','腿·核心'],
+    plans:{'推（胸·肩·三头）':['标准俯卧撑','宽距俯卧撑','钻石俯卧撑','肩上推举','三头撑','侧平举'],'拉（背·二头）':['引体向上','俯身划船','背部伸展','二头弯举'],'腿·核心':['深蹲','弓步蹲','臀桥','卷腹','腿部举起','平板支撑']}},
+  upper_lower:{name:'上下肢四分化',days:4,
+    schedule:['上肢推','上肢拉','休息','下肢·核心','休息','上肢推','上肢拉'],
+    plans:{'上肢推':['标准俯卧撑','宽距俯卧撑','肩上推举','三头撑','钻石俯卧撑'],'上肢拉':['引体向上','俯身划船','背部伸展','二头弯举','侧平举'],'下肢·核心':['深蹲','弓步蹲','臀桥','卷腹','腿部举起','平板支撑','波比跳']}}
+};
+
+const EXERCISE_LIBRARY = [
+  {id:'pushup',name:'标准俯卧撑',muscle:'chest',tags:['胸大肌','三角肌前束','三头肌'],tip:'<b>起始：</b>手与肩同宽，身体成一直线。<b>动作：</b>慢慢下降胸部接近地面，感受胸肌拉伸，再推起。<b>要点：</b>全程收腹，臀不要翘起。下降2秒，推起1秒。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><g class="anim-body"><circle cx="85" cy="18" r="7" fill="#EA580C"/><line x1="85" y1="25" x2="85" y2="42" stroke="#EA580C" stroke-width="3"/><line x1="85" y1="30" x2="70" y2="42" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round"/><circle cx="68" cy="44" r="4" fill="#EA580C"/><line x1="85" y1="30" x2="100" y2="42" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round"/><circle cx="102" cy="44" r="4" fill="#EA580C"/><line x1="85" y1="42" x2="78" y2="58" stroke="#EA580C" stroke-width="2.5"/><line x1="85" y1="42" x2="92" y2="58" stroke="#EA580C" stroke-width="2.5"/><line x1="78" y1="58" x2="78" y2="66" stroke="#EA580C" stroke-width="2"/><line x1="92" y1="58" x2="92" y2="66" stroke="#EA580C" stroke-width="2"/></g><line x1="5" y1="68" x2="105" y2="68" stroke="#E7E5E4" stroke-width="1.5"/><text x="8" y="80" font-size="9" fill="#EA580C" font-weight="600" font-family="-apple-system,sans-serif">胸大肌 · 三头肌</text></svg>`},
+  {id:'wide_pushup',name:'宽距俯卧撑',muscle:'chest',tags:['胸大肌外侧','三角肌'],tip:'<b>要点：</b>双手间距比肩宽一个拳头，感受胸外侧拉伸。下降时肘向外打开，专注胸大肌外侧发力。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><g class="anim-body"><circle cx="55" cy="18" r="7" fill="#EA580C"/><line x1="55" y1="25" x2="55" y2="42" stroke="#EA580C" stroke-width="3"/><line x1="55" y1="30" x2="20" y2="44" stroke="#EA580C" stroke-width="2.5"/><circle cx="16" cy="46" r="5" fill="#EA580C"/><line x1="55" y1="30" x2="90" y2="44" stroke="#EA580C" stroke-width="2.5"/><circle cx="94" cy="46" r="5" fill="#EA580C"/><line x1="55" y1="42" x2="49" y2="60" stroke="#EA580C" stroke-width="2.5"/><line x1="55" y1="42" x2="61" y2="60" stroke="#EA580C" stroke-width="2.5"/></g><line x1="5" y1="64" x2="105" y2="64" stroke="#E7E5E4" stroke-width="1.5"/><text x="8" y="76" font-size="9" fill="#EA580C" font-weight="600" font-family="-apple-system,sans-serif">胸大肌外侧</text></svg>`},
+  {id:'diamond_pushup',name:'钻石俯卧撑',muscle:'chest',tags:['胸中缝','三头肌'],tip:'<b>要点：</b>双手拇指食指相触成菱形，放胸口正下方。下降时感受胸中缝夹紧，肘向后贴近身体侧面。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><g class="anim-body"><circle cx="55" cy="16" r="7" fill="#7C3AED"/><line x1="55" y1="23" x2="55" y2="40" stroke="#7C3AED" stroke-width="3"/><line x1="55" y1="28" x2="44" y2="40" stroke="#7C3AED" stroke-width="2.5"/><line x1="55" y1="28" x2="66" y2="40" stroke="#7C3AED" stroke-width="2.5"/><polygon points="55,34 48,40 55,46 62,40" fill="none" stroke="#D97706" stroke-width="2"/><line x1="55" y1="40" x2="48" y2="58" stroke="#7C3AED" stroke-width="2.5"/><line x1="55" y1="40" x2="62" y2="58" stroke="#7C3AED" stroke-width="2.5"/></g><line x1="5" y1="62" x2="105" y2="62" stroke="#E7E5E4" stroke-width="1.5"/><text x="8" y="75" font-size="9" fill="#7C3AED" font-weight="600" font-family="-apple-system,sans-serif">胸中缝 · 三头肌</text></svg>`},
+  {id:'pullup',name:'引体向上',muscle:'back',tags:['背阔肌','二头肌','菱形肌'],tip:'<b>要点：</b>双手与肩同宽，掌心向外。起身时感受背阔肌发力，肘向下拉。全程控制，不要借力甩动。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><line x1="20" y1="8" x2="90" y2="8" stroke="#78716C" stroke-width="3" stroke-linecap="round"/><g class="anim-pull"><circle cx="55" cy="22" r="7" fill="#16A34A"/><line x1="55" y1="29" x2="55" y2="48" stroke="#16A34A" stroke-width="3"/><line x1="55" y1="34" x2="40" y2="10" stroke="#16A34A" stroke-width="2.5"/><line x1="55" y1="34" x2="70" y2="10" stroke="#16A34A" stroke-width="2.5"/><line x1="55" y1="48" x2="48" y2="66" stroke="#16A34A" stroke-width="2.5"/><line x1="55" y1="48" x2="62" y2="66" stroke="#16A34A" stroke-width="2.5"/></g><text x="8" y="80" font-size="9" fill="#16A34A" font-weight="600" font-family="-apple-system,sans-serif">背阔肌 · 二头肌</text></svg>`},
+  {id:'俯身划船',name:'俯身划船',muscle:'back',tags:['背阔肌','菱形肌','后三角'],tip:'<b>要点：</b>上身前倾45度，背部平直。将肘向后拉至腰侧，感受背部肌肉收缩，顶点停顿1秒再缓慢放下。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><g class="anim-body"><circle cx="30" cy="20" r="7" fill="#16A34A"/><line x1="30" y1="27" x2="70" y2="40" stroke="#16A34A" stroke-width="3"/><line x1="50" y1="33" x2="38" y2="22" stroke="#16A34A" stroke-width="2.5"/><circle cx="36" cy="20" r="4" fill="#16A34A"/><line x1="50" y1="33" x2="75" y2="25" stroke="#16A34A" stroke-width="2.5"/><circle cx="77" cy="23" r="4" fill="#16A34A"/><line x1="70" y1="40" x2="60" y2="60" stroke="#16A34A" stroke-width="2.5"/><line x1="70" y1="40" x2="80" y2="60" stroke="#16A34A" stroke-width="2.5"/></g><line x1="5" y1="64" x2="105" y2="64" stroke="#E7E5E4" stroke-width="1.5"/><text x="8" y="76" font-size="9" fill="#16A34A" font-weight="600" font-family="-apple-system,sans-serif">背阔肌 · 菱形肌</text></svg>`},
+  {id:'背部伸展',name:'背部伸展',muscle:'back',tags:['竖脊肌','臀大肌'],tip:'<b>要点：</b>俯卧地面，双手放耳侧。同时抬起上半身和腿部，感受下背收缩，保持2秒后缓慢放下。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><line x1="5" y1="56" x2="105" y2="56" stroke="#E7E5E4" stroke-width="1.5"/><g class="anim-crunch"><circle cx="80" cy="46" r="7" fill="#16A34A"/><path d="M80,53 Q55,54 30,53" stroke="#16A34A" stroke-width="3" fill="none"/><line x1="30" y1="53" x2="12" y2="46" stroke="#16A34A" stroke-width="2.5"/><line x1="80" y1="52" x2="74" y2="46" stroke="#16A34A" stroke-width="2"/><line x1="80" y1="52" x2="86" y2="46" stroke="#16A34A" stroke-width="2"/></g><text x="8" y="70" font-size="9" fill="#16A34A" font-weight="600" font-family="-apple-system,sans-serif">竖脊肌 · 臀大肌</text></svg>`},
+  {id:'肩上推举',name:'肩上推举',muscle:'shoulder',tags:['三角肌中束','前束','三头肌'],tip:'<b>要点：</b>双手与肩同宽，从肩部向上推至手臂伸直。下降时控制速度。核心收紧防止腰部过伸。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><g class="anim-press"><circle cx="55" cy="20" r="7" fill="#D97706"/><line x1="55" y1="27" x2="55" y2="50" stroke="#D97706" stroke-width="3"/><line x1="55" y1="32" x2="35" y2="38" stroke="#D97706" stroke-width="2.5"/><circle cx="30" cy="38" r="4" fill="#D97706"/><line x1="55" y1="32" x2="75" y2="38" stroke="#D97706" stroke-width="2.5"/><circle cx="80" cy="38" r="4" fill="#D97706"/><line x1="55" y1="50" x2="47" y2="68" stroke="#D97706" stroke-width="2.5"/><line x1="55" y1="50" x2="63" y2="68" stroke="#D97706" stroke-width="2.5"/></g><line x1="5" y1="72" x2="105" y2="72" stroke="#E7E5E4" stroke-width="1.5"/><text x="8" y="82" font-size="9" fill="#D97706" font-weight="600" font-family="-apple-system,sans-serif">三角肌 · 三头肌</text></svg>`},
+  {id:'侧平举',name:'侧平举',muscle:'shoulder',tags:['三角肌中束'],tip:'<b>要点：</b>双臂微弯，从体侧平举至肩膀高度，小指朝上能更好激活中束。顶点控制2秒，缓慢放下。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><g class="anim-press"><circle cx="55" cy="22" r="7" fill="#D97706"/><line x1="55" y1="29" x2="55" y2="50" stroke="#D97706" stroke-width="3"/><line x1="55" y1="36" x2="22" y2="44" stroke="#D97706" stroke-width="2.5"/><circle cx="18" cy="44" r="4" fill="#D97706"/><line x1="55" y1="36" x2="88" y2="44" stroke="#D97706" stroke-width="2.5"/><circle cx="92" cy="44" r="4" fill="#D97706"/><line x1="55" y1="50" x2="47" y2="68" stroke="#D97706" stroke-width="2.5"/><line x1="55" y1="50" x2="63" y2="68" stroke="#D97706" stroke-width="2.5"/></g><line x1="5" y1="72" x2="105" y2="72" stroke="#E7E5E4" stroke-width="1.5"/><text x="8" y="82" font-size="9" fill="#D97706" font-weight="600" font-family="-apple-system,sans-serif">三角肌中束</text></svg>`},
+  {id:'二头弯举',name:'二头弯举',muscle:'arm',tags:['肱二头肌','前臂'],tip:'<b>要点：</b>上臂贴紧身体不动，只靠肘关节弯曲。慢速下放才能充分拉伸二头肌，不要借助身体摆动。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><g class="anim-press"><circle cx="55" cy="18" r="7" fill="#7C3AED"/><line x1="55" y1="25" x2="55" y2="48" stroke="#7C3AED" stroke-width="3"/><line x1="55" y1="32" x2="42" y2="38" stroke="#7C3AED" stroke-width="2.5"/><path d="M42,38 Q36,48 42,54" stroke="#7C3AED" stroke-width="2.5" fill="none"/><circle cx="43" cy="56" r="4" fill="#7C3AED"/><line x1="55" y1="32" x2="68" y2="38" stroke="#7C3AED" stroke-width="2.5"/><path d="M68,38 Q74,48 68,54" stroke="#7C3AED" stroke-width="2.5" fill="none"/><circle cx="67" cy="56" r="4" fill="#7C3AED"/><line x1="55" y1="48" x2="47" y2="68" stroke="#7C3AED" stroke-width="2.5"/><line x1="55" y1="48" x2="63" y2="68" stroke="#7C3AED" stroke-width="2.5"/></g><line x1="5" y1="72" x2="105" y2="72" stroke="#E7E5E4" stroke-width="1.5"/><text x="8" y="82" font-size="9" fill="#7C3AED" font-weight="600" font-family="-apple-system,sans-serif">肱二头肌</text></svg>`},
+  {id:'三头撑',name:'三头撑',muscle:'arm',tags:['肱三头肌','胸下缘'],tip:'<b>要点：</b>双手撑椅子或地面，身体前倾。弯曲手肘让身体下降，感受三头肌拉伸，再推起至手臂伸直。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="28" width="70" height="8" rx="4" fill="#78716C"/><g class="anim-body"><circle cx="55" cy="18" r="7" fill="#7C3AED"/><line x1="55" y1="25" x2="55" y2="38" stroke="#7C3AED" stroke-width="3"/><line x1="55" y1="30" x2="38" y2="36" stroke="#7C3AED" stroke-width="2.5"/><circle cx="34" cy="36" r="4" fill="#7C3AED"/><line x1="55" y1="30" x2="72" y2="36" stroke="#7C3AED" stroke-width="2.5"/><circle cx="76" cy="36" r="4" fill="#7C3AED"/><line x1="55" y1="38" x2="48" y2="58" stroke="#7C3AED" stroke-width="2.5"/><line x1="55" y1="38" x2="62" y2="58" stroke="#7C3AED" stroke-width="2.5"/></g><line x1="5" y1="62" x2="105" y2="62" stroke="#E7E5E4" stroke-width="1.5"/><text x="8" y="75" font-size="9" fill="#7C3AED" font-weight="600" font-family="-apple-system,sans-serif">肱三头肌</text></svg>`},
+  {id:'crunch',name:'卷腹',muscle:'core',tags:['腹直肌上部','腹横肌'],tip:'<b>要点：</b>只需抬起肩胛骨，下背部始终贴地。双手轻放耳侧，不要拉脖子。呼气时上卷，吸气时缓慢还原。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><line x1="5" y1="62" x2="105" y2="62" stroke="#E7E5E4" stroke-width="1.5"/><g class="anim-crunch"><circle cx="22" cy="52" r="7" fill="#16A34A"/><path d="M22,59 Q45,60 65,59 Q75,58 80,59" stroke="#16A34A" stroke-width="3" fill="none"/><line x1="80" y1="59" x2="95" y2="52" stroke="#16A34A" stroke-width="2.5"/><line x1="22" y1="58" x2="16" y2="52" stroke="#16A34A" stroke-width="2"/><line x1="22" y1="58" x2="26" y2="52" stroke="#16A34A" stroke-width="2"/></g><text x="8" y="76" font-size="9" fill="#16A34A" font-weight="600" font-family="-apple-system,sans-serif">腹直肌 · 核心</text></svg>`},
+  {id:'腿部举起',name:'腿部举起',muscle:'core',tags:['腹直肌下部','髂腰肌'],tip:'<b>要点：</b>腰椎始终压紧地面。双腿下落时不要完全放到地上，保持腹肌持续紧张。速度越慢效果越好。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><line x1="5" y1="65" x2="105" y2="65" stroke="#E7E5E4" stroke-width="1.5"/><g class="anim-legr"><circle cx="90" cy="56" r="7" fill="#16A34A"/><line x1="90" y1="63" x2="15" y2="63" stroke="#16A34A" stroke-width="3"/><line x1="35" y1="63" x2="18" y2="35" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round"/><line x1="25" y1="63" x2="8" y2="35" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round"/><line x1="8" y1="35" x2="18" y2="35" stroke="#16A34A" stroke-width="2"/></g><text x="8" y="78" font-size="9" fill="#16A34A" font-weight="600" font-family="-apple-system,sans-serif">腹直肌下部</text></svg>`},
+  {id:'平板支撑',name:'平板支撑',muscle:'core',tags:['核心整体','竖脊肌','肩袖'],tip:'<b>要点：</b>肘关节在肩膀正下方，身体从头到脚保持一条直线。臀不能翘起也不能下塌。均匀呼吸，核心持续收紧。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><line x1="5" y1="68" x2="105" y2="68" stroke="#E7E5E4" stroke-width="1.5"/><g class="anim-plank"><circle cx="88" cy="34" r="7" fill="#16A34A"/><line x1="88" y1="41" x2="22" y2="54" stroke="#16A34A" stroke-width="3.5"/><line x1="22" y1="54" x2="10" y2="67" stroke="#16A34A" stroke-width="2.5"/><line x1="88" y1="54" x2="98" y2="67" stroke="#16A34A" stroke-width="2.5"/><circle cx="76" cy="57" r="4" fill="#16A34A"/></g><text x="8" y="80" font-size="9" fill="#16A34A" font-weight="600" font-family="-apple-system,sans-serif">核心整体 · 竖脊肌</text></svg>`},
+  {id:'自行车卷腹',name:'自行车卷腹',muscle:'core',tags:['腹斜肌','腹直肌'],tip:'<b>要点：</b>左右交替，肘碰对侧膝时停顿一秒。慢速做才有效，不要抢速度。一左一右算2次。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><line x1="5" y1="68" x2="105" y2="68" stroke="#E7E5E4" stroke-width="1.5"/><g class="anim-crunch"><circle cx="88" cy="44" r="6" fill="#D97706"/><line x1="88" y1="50" x2="38" y2="58" stroke="#D97706" stroke-width="2.5"/><line x1="38" y1="58" x2="20" y2="48" stroke="#D97706" stroke-width="2.5"/><circle cx="18" cy="46" r="4" fill="#D97706"/><line x1="38" y1="58" x2="12" y2="66" stroke="#D97706" stroke-width="2.5"/><line x1="38" y1="58" x2="55" y2="42" stroke="#D97706" stroke-width="2.5"/><line x1="55" y1="42" x2="48" y2="32" stroke="#D97706" stroke-width="2"/></g><text x="8" y="80" font-size="9" fill="#D97706" font-weight="600" font-family="-apple-system,sans-serif">腹斜肌 · 腹直肌</text></svg>`},
+  {id:'深蹲',name:'深蹲',muscle:'leg',tags:['股四头肌','臀大肌','腘绳肌'],tip:'<b>要点：</b>脚与肩同宽，脚尖微微外展。下蹲时膝盖跟随脚尖方向，大腿至少平行地面。保持挺胸，重心落脚中。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><g class="anim-squat"><circle cx="55" cy="16" r="7" fill="#EA580C"/><line x1="55" y1="23" x2="55" y2="44" stroke="#EA580C" stroke-width="3"/><line x1="55" y1="30" x2="42" y2="38" stroke="#EA580C" stroke-width="2.5"/><line x1="55" y1="30" x2="68" y2="38" stroke="#EA580C" stroke-width="2.5"/><line x1="55" y1="44" x2="42" y2="62" stroke="#EA580C" stroke-width="2.5"/><line x1="55" y1="44" x2="68" y2="62" stroke="#EA580C" stroke-width="2.5"/><line x1="42" y1="62" x2="38" y2="72" stroke="#EA580C" stroke-width="2.5"/><line x1="68" y1="62" x2="72" y2="72" stroke="#EA580C" stroke-width="2.5"/></g><line x1="5" y1="75" x2="105" y2="75" stroke="#E7E5E4" stroke-width="1.5"/><text x="8" y="83" font-size="9" fill="#EA580C" font-weight="600" font-family="-apple-system,sans-serif">股四头肌 · 臀大肌</text></svg>`},
+  {id:'弓步蹲',name:'弓步蹲',muscle:'leg',tags:['股四头肌','臀大肌','稳定性'],tip:'<b>要点：</b>大步向前迈出，前脚膝盖不要超过脚尖。后膝下沉接近地面，保持上身直立。左右交替完成。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><g class="anim-squat"><circle cx="50" cy="16" r="7" fill="#EA580C"/><line x1="50" y1="23" x2="50" y2="42" stroke="#EA580C" stroke-width="3"/><line x1="50" y1="28" x2="38" y2="36" stroke="#EA580C" stroke-width="2.5"/><line x1="50" y1="28" x2="62" y2="36" stroke="#EA580C" stroke-width="2.5"/><line x1="50" y1="42" x2="30" y2="58" stroke="#EA580C" stroke-width="2.5"/><line x1="30" y1="58" x2="22" y2="74" stroke="#EA580C" stroke-width="2.5"/><line x1="50" y1="42" x2="65" y2="56" stroke="#EA580C" stroke-width="2.5"/><line x1="65" y1="56" x2="68" y2="74" stroke="#EA580C" stroke-width="2.5"/></g><line x1="5" y1="76" x2="105" y2="76" stroke="#E7E5E4" stroke-width="1.5"/><text x="8" y="83" font-size="9" fill="#EA580C" font-weight="600" font-family="-apple-system,sans-serif">股四头肌 · 臀部</text></svg>`},
+  {id:'臀桥',name:'臀桥',muscle:'leg',tags:['臀大肌','腘绳肌','核心'],tip:'<b>要点：</b>仰卧屈膝，脚平放地面。臀部向上推至身体成直线，顶点收紧臀部保持2秒。缓慢放下，不要完全着地。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><line x1="5" y1="68" x2="105" y2="68" stroke="#E7E5E4" stroke-width="1.5"/><g class="anim-crunch"><circle cx="88" cy="50" r="7" fill="#EA580C"/><path d="M88,57 Q70,50 50,55" stroke="#EA580C" stroke-width="3" fill="none"/><line x1="50" y1="55" x2="28" y2="66" stroke="#EA580C" stroke-width="2.5"/><line x1="28" y1="66" x2="20" y2="67" stroke="#EA580C" stroke-width="2"/><line x1="50" y1="55" x2="45" y2="38" stroke="#EA580C" stroke-width="2.5"/><line x1="45" y1="38" x2="30" y2="66" stroke="#EA580C" stroke-width="2"/></g><text x="8" y="80" font-size="9" fill="#EA580C" font-weight="600" font-family="-apple-system,sans-serif">臀大肌 · 腘绳肌</text></svg>`},
+  {id:'波比跳',name:'波比跳',muscle:'cardio',tags:['全身','心肺','爆发力'],tip:'<b>要点：</b>①站立→②蹲撑地→③跳腿到俯卧撑位→④做俯卧撑→⑤跳腿收回→⑥跳起。初期可省略跳起降低强度。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><g class="anim-burp"><circle cx="55" cy="20" r="7" fill="#EA580C"/><line x1="55" y1="27" x2="55" y2="46" stroke="#EA580C" stroke-width="3"/><line x1="55" y1="33" x2="42" y2="40" stroke="#EA580C" stroke-width="2.5"/><line x1="55" y1="33" x2="68" y2="40" stroke="#EA580C" stroke-width="2.5"/><line x1="55" y1="46" x2="46" y2="62" stroke="#EA580C" stroke-width="2.5"/><line x1="55" y1="46" x2="64" y2="62" stroke="#EA580C" stroke-width="2.5"/></g><line x1="5" y1="66" x2="105" y2="66" stroke="#E7E5E4" stroke-width="1.5"/><text x="8" y="78" font-size="9" fill="#EA580C" font-weight="600" font-family="-apple-system,sans-serif">全身 · 心肺 · 爆发力</text></svg>`},
+  {id:'登山跑',name:'登山跑',muscle:'cardio',tags:['核心','心肺','协调性'],tip:'<b>要点：</b>保持俯卧撑姿势，手腕在肩膀正下方。双腿快速交替向胸口收膝，速度越快心率越高。腰不要下塌。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><line x1="5" y1="72" x2="105" y2="72" stroke="#E7E5E4" stroke-width="1.5"/><circle cx="88" cy="30" r="7" fill="#D97706"/><line x1="88" y1="37" x2="22" y2="52" stroke="#D97706" stroke-width="3.5"/><line x1="22" y1="52" x2="10" y2="65" stroke="#D97706" stroke-width="2.5"/><line x1="88" y1="52" x2="98" y2="65" stroke="#D97706" stroke-width="2.5"/><circle cx="76" cy="55" r="4" fill="#D97706"/><g class="anim-mc"><line x1="64" y1="50" x2="55" y2="38" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="38" x2="50" y2="48" stroke="#EA580C" stroke-width="2" stroke-linecap="round"/></g><text x="8" y="82" font-size="9" fill="#D97706" font-weight="600" font-family="-apple-system,sans-serif">核心 · 心肺</text></svg>`},
+  {id:'开合跳',name:'开合跳',muscle:'cardio',tags:['心肺','协调性','热身'],tip:'<b>要点：</b>落地时膝盖微弯缓冲，控制节奏不要太快。手臂和腿同步展开收回。适合热身或有氧间歇。',anim:`<svg viewBox="0 0 110 84" width="110" height="84" xmlns="http://www.w3.org/2000/svg"><g class="anim-press"><circle cx="55" cy="18" r="7" fill="#D97706"/><line x1="55" y1="25" x2="55" y2="48" stroke="#D97706" stroke-width="3"/><line x1="55" y1="32" x2="25" y2="20" stroke="#D97706" stroke-width="2.5"/><line x1="55" y1="32" x2="85" y2="20" stroke="#D97706" stroke-width="2.5"/><line x1="55" y1="48" x2="35" y2="68" stroke="#D97706" stroke-width="2.5"/><line x1="55" y1="48" x2="75" y2="68" stroke="#D97706" stroke-width="2.5"/></g><line x1="5" y1="72" x2="105" y2="72" stroke="#E7E5E4" stroke-width="1.5"/><text x="8" y="82" font-size="9" fill="#D97706" font-weight="600" font-family="-apple-system,sans-serif">心肺 · 热身</text></svg>`}
+];
+
+// ══════════════════════════════════════
+// 评估系统
+// ══════════════════════════════════════
+let assessAnswers={};
+let currentLevel=ls('fit_level_'+(currentUser?.id||'guest'),-1);
+let currentSplit=ls('fit_split_'+(currentUser?.id||'guest'),'ppl');
+
+function showAssess(){
+  assessAnswers={};
+  document.querySelectorAll('.assess-opt').forEach(b=>b.classList.remove('selected'));
+  for(let i=1;i<=5;i++){const s=document.getElementById('assess-step-'+i);if(s)s.style.display='none';}
+  document.getElementById('assess-result').style.display='none';
+  document.getElementById('assess-step-1').style.display='block';
+  document.querySelectorAll('.assess-dot').forEach((d,i)=>d.classList.toggle('active',i===0));
+  document.querySelectorAll('.assess-next').forEach(b=>b.style.display='none');
+  document.getElementById('assess-dots').style.display='flex';
+  document.getElementById('fit-assess-overlay').style.display='block';
+}
+
+function selectOpt(q,val,btn){
+  document.getElementById(q+'-opts').querySelectorAll('.assess-opt').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  assessAnswers[q]=val;
+  const n=parseInt(q.replace('q',''));
+  document.getElementById('next-'+n).style.display='block';
+}
+
+function assessNext(step){
+  document.getElementById('assess-step-'+step).style.display='none';
+  if(step<5){
+    document.getElementById('assess-step-'+(step+1)).style.display='block';
+    document.querySelectorAll('.assess-dot').forEach((d,i)=>d.classList.toggle('active',i===step));
+  }
+}
+
+function calcLevel(){
+  const score=(assessAnswers.q1||0)*2+(assessAnswers.q2||0)*2+(assessAnswers.q4||0);
+  let lvl=score>=14?5:score>=11?4:score>=8?3:score>=5?2:score>=2?1:0;
+  showLevelResult(lvl);
+}
+
+function showLevelResult(lvl){
+  lvl=Math.max(0,Math.min(5,lvl));
+  const L=LEVELS[lvl];
+  for(let i=1;i<=5;i++){const s=document.getElementById('assess-step-'+i);if(s)s.style.display='none';}
+  document.getElementById('assess-result').style.display='block';
+  document.getElementById('assess-dots').style.display='none';
+  document.getElementById('level-emoji').textContent=L.emoji;
+  document.getElementById('level-name').textContent=L.name+' 等级';
+  document.getElementById('level-desc').textContent=L.desc;
+  document.getElementById('res-sets').textContent=L.sets+'组×'+L.reps;
+  document.getElementById('res-rest').textContent=L.rest+'秒';
+  document.getElementById('res-days').textContent=L.days+'天/周';
+  window._pendingLevel=lvl;
+}
+
+function adjustLevel(d){window._pendingLevel=Math.max(0,Math.min(5,(window._pendingLevel||0)+d));showLevelResult(window._pendingLevel);}
+
+function confirmLevel(){
+  currentLevel=window._pendingLevel||0;
+  lsSet('fit_level_'+(currentUser?.id||'guest'),currentLevel);
+  document.getElementById('fit-assess-overlay').style.display='none';
+  renderFitLevel();renderFitToday();
+}
+
+function renderFitLevel(){
+  const L=LEVELS[Math.max(0,currentLevel)];
+  const el=document.getElementById('fit-level-tag');
+  if(el)el.textContent=L.emoji+' '+L.name+' · '+SPLITS[currentSplit]?.name;
+}
+
+// ══════════════════════════════════════
+// 分化系统
+// ══════════════════════════════════════
+function setSplit(key,card){
+  currentSplit=key;
+  lsSet('fit_split_'+(currentUser?.id||'guest'),key);
+  document.querySelectorAll('.split-card').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('.split-check').forEach(c=>{c.classList.remove('selected');c.textContent='';});
+  card.classList.add('selected');
+  const ch=document.getElementById('sc-'+key);
+  if(ch){ch.classList.add('selected');ch.textContent='✓';}
+  renderSplitPlan();renderFitLevel();
+}
+
+function renderSplitPlan(){
+  const split=SPLITS[currentSplit];
+  const days=['周一','周二','周三','周四','周五','周六','周日'];
+  const c=document.getElementById('split-weekly-plan');
+  if(!c)return;
+  c.innerHTML=split.schedule.map((s,i)=>`
+    <div class="week-day-plan">
+      <div class="wdp-day">${days[i]}</div>
+      ${s==='休息'?`<div class="wdp-rest">🛌 休息恢复</div>`
+      :`<div class="wdp-label">${s}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">${(split.plans[s]||[]).join(' · ')}</div>`}
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════
+// 今日训练
+// ══════════════════════════════════════
+function renderFitToday(){
+  const c=document.getElementById('fit-today-content');
+  if(!c)return;
+  if(currentLevel<0){
+    c.innerHTML=`<div style="text-align:center;padding:40px 20px"><div style="font-size:48px;margin-bottom:16px">💪</div><div style="font-size:18px;font-weight:700;margin-bottom:8px">先完成等级评估</div><div style="font-size:14px;color:var(--muted);margin-bottom:24px">AI 根据你的情况匹配最适合的训练计划</div><button onclick="showAssess()" class="btn-primary-full" style="margin:0 auto;display:block;max-width:280px">🤖 开始AI评估</button></div>`;
+    return;
+  }
+  const L=LEVELS[currentLevel];
+  const split=SPLITS[currentSplit];
+  const days=['周一','周二','周三','周四','周五','周六','周日'];
+  const todaySession=split.schedule[todayIdx];
+  const doneEx=getTodayFitEx();
+  if(todaySession==='休息'){
+    c.innerHTML=`<div style="text-align:center;padding:40px 20px"><div style="font-size:48px;margin-bottom:16px">🛌</div><div style="font-size:18px;font-weight:700;margin-bottom:8px">今天是休息日</div><div style="font-size:14px;color:var(--muted)">好好休息，肌肉在休息中生长</div><div class="tipbox" style="margin-top:20px;text-align:left">💡 可以做10-15分钟轻度拉伸，帮助肌肉恢复</div></div>`;
+    return;
+  }
+  const exNames=split.plans[todaySession]||[];
+  const exercises=exNames.map(n=>EXERCISE_LIBRARY.find(e=>e.name===n||e.id===n)).filter(Boolean);
+  const tagColors={chest:'var(--fit)',back:'var(--green)',shoulder:'var(--eng)',arm:'var(--purple)',core:'var(--green)',leg:'var(--purple)',cardio:'var(--eng-d)'};
+  c.innerHTML=`
+    <div style="padding:12px 16px 4px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <div class="level-badge lv-${L.id}">${L.emoji} ${L.name}</div>
+        <div style="font-size:13px;color:var(--muted)">${days[todayIdx]} · ${todaySession}</div>
+      </div>
+      <div style="font-size:12px;color:var(--muted)">${L.sets}组 · ${L.reps}次 · 组间休息${L.rest}秒</div>
+    </div>
+    <div class="today-session-card" style="margin:8px 16px">
+      <div class="session-head">
+        <div class="session-num">💪</div>
+        <div style="flex:1"><div class="session-title">${todaySession}</div><div class="session-meta">${exercises.length}个动作</div></div>
+      </div>
+      ${exercises.map((ex,i)=>{
+        const done=doneEx.includes(i);
+        const tc=tagColors[ex.muscle]||'var(--muted)';
+        return `<div class="today-ex-row${done?' tex-done':''}" onclick="toggleTodayEx(${i},this)">
+          <div class="tex-check">${done?'✓':''}</div>
+          <div style="flex:1"><div class="tex-name">${ex.name}</div><div class="tex-sets">${L.sets}组 × ${ex.id==='平板支撑'?'30-60秒':L.reps+'次'}</div></div>
+          <span class="tex-tag" style="background:${tc}22;color:${tc}">${ex.tags[0]}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="padding:0 16px"><button class="btn-primary-full" onclick="markFitDone()">✓ 完成今天训练</button></div>`;
+}
+
+function toggleTodayEx(i,row){
+  const a=getTodayFitEx();const idx=a.indexOf(i);if(idx===-1)a.push(i);else a.splice(idx,1);
+  setTodayFitEx(a);
+  row.classList.toggle('tex-done');
+  row.querySelector('.tex-check').textContent=a.includes(i)?'✓':'';
+}
+
+function markFitDone(){
+  const split=SPLITS[currentSplit];
+  const todaySession=split.schedule[todayIdx];
+  const exNames=(split.plans[todaySession]||[]);
+  setTodayFitEx(exNames.map((_,i)=>i));
+  const wd=getWeekDone('fit');wd[todayIdx]=true;setWeekDone('fit',wd);
+  const cal=ls('cal_data',{});const dk=getDateKey(new Date());
+  cal[dk]=(cal[dk]||'');if(!cal[dk].includes('f'))cal[dk]+='f';lsSet('cal_data',cal);
+  const tasks=getTodayTasks();tasks.fit=true;setTodayTasks(tasks);
+  renderFitToday();renderHome();
+  alert('🎉 '+LEVELS[Math.max(0,currentLevel)].emoji+' 今天训练完成！继续保持！');
+}
+
+// ══════════════════════════════════════
+// 动作库
+// ══════════════════════════════════════
+let currentMuscle='all';
+function filterMuscle(m,btn){
+  currentMuscle=m;
+  document.querySelectorAll('.muscle-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderLibrary();
+}
+function renderLibrary(){
+  const filtered=currentMuscle==='all'?EXERCISE_LIBRARY:EXERCISE_LIBRARY.filter(e=>e.muscle===currentMuscle);
+  const muscleLabel={chest:'胸肌',back:'背肌',shoulder:'肩部',arm:'手臂',core:'核心',leg:'腿部',cardio:'有氧'};
+  const badgeClass={chest:'badge-chest',back:'badge-abs',shoulder:'badge-cardio',arm:'badge-cardio',core:'badge-abs',leg:'badge-chest',cardio:'badge-cardio'};
+  document.getElementById('exercise-library').innerHTML=filtered.map(ex=>`
+    <div class="ex-lib-card">
+      <div class="ex-lib-head">
+        <div class="ex-lib-meta">
+          <div class="edbadge ${badgeClass[ex.muscle]||'badge-abs'}">${muscleLabel[ex.muscle]||ex.muscle}</div>
+          <div class="ex-lib-name">${ex.name}</div>
+          <div class="ex-muscle-tags">${ex.tags.map(t=>`<span class="muscle-tag">${t}</span>`).join('')}</div>
+        </div>
+        <div class="ex-anim-wrap">${ex.anim}</div>
+      </div>
+      <div class="ex-lib-tip">${ex.tip}</div>
+    </div>`).join('');
+}
+
+function fitTab(id,btn){
+  document.querySelectorAll('#s-fit .subpanel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#s-fit .stab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('fit-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='calendar')renderCalendar();
+  if(id==='library')renderLibrary();
+  if(id==='split'){renderSplitPlan();const ch=document.getElementById('sc-'+currentSplit);if(ch){ch.classList.add('selected');ch.textContent='✓';}document.getElementById('split-'+currentSplit)?.classList.add('selected');}
+}
+
+const DRILLS = [
+  {phrase:"How's it going?",phonetic:"/haʊz ɪt ˈɡoʊɪŋ/",meaning:"最近怎么样？",tip:"<b>场景：</b>日常问候，比 How are you 更口语。<br><b>回答：</b>Pretty good! / Not bad, you?<br><b>要点：</b>语调先升后降，连读流畅。"},
+  {phrase:"That makes sense.",phonetic:"/ðæt meɪks sens/",meaning:"有道理。/ 说得通。",tip:"<b>场景：</b>听别人说话后表示认同，超高频词。<br><b>变体：</b>That totally makes sense.<br><b>要点：</b>makes 和 sense 几乎连读成一个词。"},
+  {phrase:"I'm just kidding.",phonetic:"/aɪm dʒʌst ˈkɪdɪŋ/",meaning:"我只是在开玩笑。",tip:"<b>场景：</b>说完玩笑后澄清，避免误会。<br><b>变体：</b>Just kidding! / I'm only joking.<br><b>要点：</b>kidding 重读，语气轻松。"},
+  {phrase:"What do you mean?",phonetic:"/wɒt duː juː miːn/",meaning:"你什么意思？",tip:"<b>场景：</b>听不明白时礼貌请求解释。<br><b>变体：</b>What do you mean by that?<br><b>要点：</b>do you 连读接近 dya。"},
+  {phrase:"It depends.",phonetic:"/ɪt dɪˈpendz/",meaning:"要看情况。",tip:"<b>场景：</b>回答不确定问题时最地道的表达。<br><b>扩展：</b>It depends on the situation.<br><b>要点：</b>简短有力，是超实用万能回答。"},
+  {phrase:"That's what I was thinking.",phonetic:"/ðæts wɒt aɪ wəz ˈθɪŋkɪŋ/",meaning:"我也是这么想的。",tip:"<b>场景：</b>对方说出了你心里想说的，表示共鸣。<br><b>变体：</b>My thoughts exactly!<br><b>要点：</b>was thinking 表示之前一直这样想。"}
+];
+
+const WORDS = [
+  {w:"hang out",p:"/hæŋ aʊt/",m:"出去玩、聚一聚",e:"Let's hang out this weekend!"},
+  {w:"catch up",p:"/kætʃ ʌp/",m:"叙旧、了解近况",e:"We should catch up over coffee."},
+  {w:"go for it",p:"/ɡoʊ fɔːr ɪt/",m:"去做吧、试试看",e:"If you want to apply, just go for it!"},
+  {w:"no worries",p:"/noʊ ˈwʌriz/",m:"没关系、不用担心",e:"No worries, I'll handle it."},
+  {w:"figure out",p:"/ˈfɪɡjər aʊt/",m:"弄清楚、想明白",e:"I need to figure out what to do next."}
+];
+
+const ENG_PLAN = [
+  {week:"第1–2周",title:"开口基础",tasks:["每天跟读 6 个日常口语句型，每句重复 3 遍","学习 5 个高频口语词，造一个自己的例句","用 AI 陪练进行 5 轮简单对话","听 10 分钟英文内容，不要求全懂"]},
+  {week:"第3–4周",title:"对话扩展",tasks:["增加跟读难度：连续句型和常用对话段落","AI 陪练主题：工作、爱好、日常生活","开始看带字幕英文短视频（5–10分钟）","每天用英语写 2–3 句日记"]},
+  {week:"第5–6周",title:"影视输入",tasks:["选一部英文美剧，先开中字看一遍","再开英字重看，遇到不懂的句子暂停跟读","摘录 3 个喜欢的句子在 AI 陪练中模仿","AI 对话延长到 15 轮，尝试描述剧情"]},
+  {week:"第7–8周",title:"流利冲刺",tasks:["影子跟读：听一句立刻跟读，不看字幕","AI 陪练：自由话题，重点纠正语音语调","每天至少说 3 分钟英文（可以录音回听）","完成挑战：用英文讲述一段喜欢的影视情节"]}
+];
+
+// ══════════════════════════════════════
+// 本地存储
+// ══════════════════════════════════════
+function ls(k,d=null){try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d;}catch(e){return d;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function uid(){return currentUser?.id||'guest'}
+function getWeekDone(t){return ls('wd_'+t+'_'+uid(),{});}
+function setWeekDone(t,d){lsSet('wd_'+t+'_'+uid(),d);syncCheckin(t);}
+function getTodayFitEx(){return ls('fe_'+todayIdx+'_'+uid(),[]);}
+function setTodayFitEx(a){lsSet('fe_'+todayIdx+'_'+uid(),a);}
+function getTodayTasks(){return ls('tt_'+uid(),{});}
+function setTodayTasks(d){lsSet('tt_'+uid(),d);}
+
+function getDateKey(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+
+async function syncCheckin(type){
+  if(!currentUser)return;
+  try{
+    const today=getDateKey(new Date());
+    await supa.from('checkins').upsert({user_id:currentUser.id,date:today,type},{onConflict:'user_id,date,type'});
+  }catch(e){}
+}
+
+// ══════════════════════════════════════
+// Auth
+// ══════════════════════════════════════
+async function initAuth(){
+  const {data:{session}}=await supa.auth.getSession();
+  if(session?.user){currentUser=session.user;showApp();}
+  else document.getElementById('auth-screen').classList.remove('hidden');
+  supa.auth.onAuthStateChange((event,session)=>{
+    if(session?.user){currentUser=session.user;showApp();}
+    else{currentUser=null;document.getElementById('auth-screen').classList.remove('hidden');}
+  });
+}
+
+function showApp(){
+  document.getElementById('auth-screen').classList.add('hidden');
+  currentLevel=ls('fit_level_'+(currentUser?.id||'guest'),-1);
+  currentSplit=ls('fit_split_'+(currentUser?.id||'guest'),'ppl');
+  updateUserUI();
+  renderHome();
+  renderFitLevel();
+  renderFitToday();
+  renderDrill();
+  renderWords();
+  renderEngPlan();
+  loadSavedPlugins();
+  const r=ls('rest_time','60秒');
+  document.getElementById('set-rest-val').textContent=r;
+  timerSec=parseInt(r);timerTotal=timerSec;updateTimerUI();
+  document.getElementById('set-email').textContent=currentUser?.email||'';
+  if(currentLevel<0) setTimeout(()=>showAssess(),800);
+}
+
+function updateUserUI(){
+  if(!currentUser)return;
+  const name=currentUser.user_metadata?.full_name||currentUser.email?.split('@')[0]||'W';
+  const avatar=currentUser.user_metadata?.avatar_url;
+  const firstName=name.split(' ')[0];
+  document.getElementById('home-name').textContent=firstName;
+  document.getElementById('user-name-chip').textContent=firstName;
+  const av=document.getElementById('user-av');
+  if(avatar)av.innerHTML=`<img src="${avatar}" alt="${name}">`;
+  else av.textContent=name[0].toUpperCase();
+  const hour=new Date().getHours();
+  const greeting=hour<12?'早上好 ☀️':hour<18?'下午好 👋':'晚上好 🌙';
+  document.getElementById('home-greeting')||0;
+  document.querySelector('.home-greeting').textContent=greeting;
+}
+
+function toggleAuthMode(){
+  authMode=authMode==='login'?'register':'login';
+  const btn=document.getElementById('auth-submit-btn');
+  const toggle=document.querySelector('.auth-toggle');
+  if(authMode==='register'){btn.textContent='注册账号';toggle.innerHTML='已有账号？<b onclick="toggleAuthMode()">立即登录</b>';}
+  else{btn.textContent='登录';toggle.innerHTML='还没有账号？<b onclick="toggleAuthMode()">立即注册</b>';}
+  document.getElementById('auth-err').textContent='';
+}
+
+async function authSubmit(){
+  const email=document.getElementById('auth-email').value.trim();
+  const pass=document.getElementById('auth-pass').value;
+  const err=document.getElementById('auth-err');
+  const btn=document.getElementById('auth-submit-btn');
+  if(!email||!pass){err.textContent='请填写邮箱和密码';return;}
+  if(pass.length<6){err.textContent='密码至少 6 位';return;}
+  btn.textContent='处理中...';btn.disabled=true;
+  err.style.color='var(--red)';err.textContent='';
+  try{
+    if(authMode==='register'){
+      const{data,error}=await supa.auth.signUp({email,password:pass});
+      if(error){
+        const msgs={'User already registered':'该邮箱已注册，请直接登录','Password should be at least 6 characters':'密码至少 6 位'};
+        err.textContent=msgs[error.message]||('注册失败：'+error.message);
+      }else if(data?.session){currentUser=data.session.user;showApp();return;}
+      else if(data?.user){err.style.color='var(--green)';err.textContent='注册成功！请查收验证邮件后登录。';authMode='login';btn.textContent='登录';}
+    }else{
+      const{data,error}=await supa.auth.signInWithPassword({email,password:pass});
+      if(error){
+        const msgs={'Invalid login credentials':'邮箱或密码错误','Email not confirmed':'请先验证邮箱','Too many requests':'尝试次数过多，请稍后再试'};
+        err.textContent=msgs[error.message]||('登录失败：'+error.message);
+      }else if(data?.session){currentUser=data.session.user;showApp();return;}
+    }
+  }catch(e){err.textContent='网络错误，请检查网络后重试';}
+  btn.textContent=authMode==='login'?'登录':'注册账号';
+  btn.disabled=false;
+}
+
+async function authGoogle(){
+  await supa.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.href}});
+}
+
+function togglePassView(){
+  const input=document.getElementById('auth-pass');
+  const icon=document.getElementById('eye-icon');
+  if(input.type==='password'){
+    input.type='text';
+    icon.innerHTML='<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  }else{
+    input.type='password';
+    icon.innerHTML='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+}
+
+function showUserMenu(){
+  if(confirm(`账号：${currentUser?.email}\n\n点击「确定」退出登录`))supa.auth.signOut();
+}
+
+// ══════════════════════════════════════
+// 导航
+// ══════════════════════════════════════
+function goTo(id,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.titem').forEach(t=>t.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+}
+function goToFriends(btn){
+  goTo('friends',btn);
+  loadLeaderboard();
+}
+function fitTab(id,btn){
+  document.querySelectorAll('#s-fit .subpanel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#s-fit .stab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('fit-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='calendar')renderCalendar();
+}
+function engTab(id,btn){
+  document.querySelectorAll('#s-eng .subpanel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#s-eng .stab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('eng-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ══════════════════════════════════════
+// 首页
+// ══════════════════════════════════════
+function renderHome(){
+  const d=new Date();
+  const days=['周日','周一','周二','周三','周四','周五','周六'];
+  document.getElementById('home-date').textContent=`${d.getMonth()+1}月${d.getDate()}日 · ${days[d.getDay()]}`;
+  const fitDone=getWeekDone('fit');
+  const fitCount=Object.values(fitDone).filter(Boolean).length;
+  document.getElementById('fit-zone-label').textContent=`本周 ${fitCount}/6 天`;
+  document.getElementById('fit-zone-fill').style.width=Math.round(fitCount/6*100)+'%';
+  document.getElementById('fit-zone-tasks').textContent='今日：'+(SPLITS[currentSplit]?.schedule[todayIdx]||'休息');
+  document.getElementById('fit-zone-badge').textContent=fitDone[todayIdx]?'✓ 已完成':'▸ 开始';
+  const engDone=getWeekDone('eng');
+  const engCount=Object.values(engDone).filter(Boolean).length;
+  document.getElementById('eng-zone-label').textContent=`本周 ${engCount}/7 天`;
+  document.getElementById('eng-zone-fill').style.width=Math.round(engCount/7*100)+'%';
+  document.getElementById('eng-zone-badge').textContent=engDone[todayIdx]?'✓ 已完成':'▸ 开始';
+  renderTodayTasks();
+}
+
+function renderTodayTasks(){
+  const tasks=getTodayTasks();
+  ['fit','drill','ai'].forEach(k=>{
+    const done=!!tasks[k];
+    const row=document.getElementById('task-'+k);
+    const check=document.getElementById('task-'+k+'-check');
+    if(done){row.classList.add('today-done');check.textContent='✓';check.classList.add('today-checked');}
+    else{row.classList.remove('today-done');check.textContent='';check.classList.remove('today-checked');}
+  });
+}
+
+function toggleTodayTask(k){
+  const tasks=getTodayTasks();
+  tasks[k]=!tasks[k];
+  setTodayTasks(tasks);
+  if(tasks[k]&&k==='fit'){
+    const wd=getWeekDone('fit');wd[todayIdx]=true;setWeekDone('fit',wd);
+    const cal=ls('cal_data',{});const dk=getDateKey(new Date());
+    cal[dk]=(cal[dk]||'');if(!cal[dk].includes('f'))cal[dk]+='f';lsSet('cal_data',cal);
+  }
+  if(tasks[k]&&(k==='drill'||k==='ai')){
+    const allEng=tasks.drill&&tasks.ai;
+    if(allEng){const wd=getWeekDone('eng');wd[todayIdx]=true;setWeekDone('eng',wd);
+    const cal=ls('cal_data',{});const dk=getDateKey(new Date());
+    cal[dk]=(cal[dk]||'');if(!cal[dk].includes('e'))cal[dk]+='e';lsSet('cal_data',cal);}
+  }
+  renderHome();
+}
+
+
+// ══════════════════════════════════════
+// 计时器
+// ══════════════════════════════════════
+let timerSec=60,timerTotal=60,timerRunning=false,timerInt=null;
+function updateTimerUI(){
+  const m=Math.floor(timerSec/60).toString().padStart(2,'0');
+  const s=(timerSec%60).toString().padStart(2,'0');
+  const el=document.getElementById('timer-disp');if(el)el.textContent=m+':'+s;
+  const p=document.getElementById('timer-prog');if(p)p.style.width=Math.round((1-timerSec/timerTotal)*100)+'%';
+}
+function setTimerDur(sec,btn){
+  clearInterval(timerInt);timerRunning=false;timerSec=sec;timerTotal=sec;
+  document.getElementById('timer-btn').textContent='▶';updateTimerUI();
+  document.querySelectorAll('.dur-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+}
+function toggleTimer(){
+  if(timerRunning){clearInterval(timerInt);timerRunning=false;document.getElementById('timer-btn').textContent='▶';}
+  else{
+    if(timerSec===0)timerSec=timerTotal;
+    timerRunning=true;document.getElementById('timer-btn').textContent='⏸';
+    timerInt=setInterval(()=>{timerSec--;updateTimerUI();
+      if(timerSec<=0){clearInterval(timerInt);timerRunning=false;document.getElementById('timer-btn').textContent='▶';if(navigator.vibrate)navigator.vibrate([300,100,300]);}
+    },1000);
+  }
+}
+function resetTimer(){clearInterval(timerInt);timerRunning=false;timerSec=timerTotal;document.getElementById('timer-btn').textContent='▶';updateTimerUI();}
+
+// ══════════════════════════════════════
+// 计数器
+// ══════════════════════════════════════
+let counterVal=0,counterSet=1;
+function counterChange(d){counterVal=Math.max(0,counterVal+d);document.getElementById('counter-num').textContent=counterVal;}
+function resetCounter(){counterVal=0;document.getElementById('counter-num').textContent='0';}
+function nextSet(){counterSet++;counterVal=0;document.getElementById('counter-num').textContent='0';document.getElementById('counter-sub').textContent='第 '+counterSet+' 组 · 目标 15 个';if(navigator.vibrate)navigator.vibrate(100);}
+
+// ══════════════════════════════════════
+// 月历
+// ══════════════════════════════════════
+let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+function calMove(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++;}else if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+function renderCalendar(){
+  const months=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  document.getElementById('cal-title').textContent=calYear+'年 '+months[calMonth];
+  const calData=ls('cal_data',{});
+  const grid=document.getElementById('cal-grid');
+  const dn=['一','二','三','四','五','六','日'];
+  let html=dn.map(n=>`<div class="cal-dn">${n}</div>`).join('');
+  const first=new Date(calYear,calMonth,1).getDay();
+  const offset=(first+6)%7;
+  const dim=new Date(calYear,calMonth+1,0).getDate();
+  const today=new Date();
+  for(let i=0;i<offset;i++)html+=`<div class="cal-cell"></div>`;
+  let fc=0,ec=0,bc=0;
+  for(let d=1;d<=dim;d++){
+    const k=calYear+'-'+(calMonth+1)+'-'+d;
+    const v=calData[k]||'';
+    const hf=v.includes('f'),he=v.includes('e');
+    if(hf)fc++;if(he)ec++;if(hf&&he)bc++;
+    const it=d===today.getDate()&&calMonth===today.getMonth()&&calYear===today.getFullYear();
+    let cls='cal-cell has-date';
+    if(hf&&he)cls+=' trained-both';else if(hf)cls+=' trained';else if(he)cls+=' trained-eng';
+    if(it)cls+=' today-cell';
+    html+=`<button class="${cls}" onclick="toggleCalDay(${d})">${d}</button>`;
+  }
+  grid.innerHTML=html;
+  document.getElementById('cal-fit-count').textContent=fc;
+  document.getElementById('cal-eng-count').textContent=ec;
+  document.getElementById('cal-both-count').textContent=bc;
+}
+function toggleCalDay(d){
+  const k=calYear+'-'+(calMonth+1)+'-'+d;
+  const cal=ls('cal_data',{});const cur=cal[k]||'';
+  if(!cur)cal[k]='f';else if(cur==='f')cal[k]='fe';else if(cur==='fe')cal[k]='e';else cal[k]='';
+  lsSet('cal_data',cal);renderCalendar();
+}
+
+// ══════════════════════════════════════
+// 跟读
+// ══════════════════════════════════════
+let drillIdx=0;
+function renderDrill(){
+  const d=DRILLS[drillIdx];
+  document.getElementById('drill-phrase').textContent=d.phrase;
+  document.getElementById('drill-phonetic').textContent=d.phonetic;
+  document.getElementById('drill-meaning').textContent=d.meaning;
+  document.getElementById('drill-tip').innerHTML=d.tip;
+  document.getElementById('drill-progress').textContent=(drillIdx+1)+' / '+DRILLS.length;
+}
+function nextDrill(){drillIdx=(drillIdx+1)%DRILLS.length;renderDrill();}
+function speakPhrase(){
+  if('speechSynthesis' in window){const u=new SpeechSynthesisUtterance(DRILLS[drillIdx].phrase);u.lang='en-US';u.rate=0.85;speechSynthesis.speak(u);}
+  else alert('请在 Safari 中使用语音朗读功能');
+}
+function renderWords(){
+  document.getElementById('word-list').innerHTML=WORDS.map(w=>`
+    <div class="exitem" style="cursor:default">
+      <div><div class="exname">${w.w} <span style="font-size:12px;color:var(--muted);font-weight:400">${w.p}</span></div>
+      <div class="exsets">${w.m}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:3px;font-style:italic">${w.e}</div></div>
+    </div>`).join('');
+}
+function renderEngPlan(){
+  document.getElementById('eng-plan-list').innerHTML=ENG_PLAN.map(p=>`
+    <div class="eng-week">
+      <div class="eng-week-head" onclick="this.nextElementSibling.classList.toggle('open');this.querySelector('span:last-child').textContent=this.nextElementSibling.classList.contains('open')?'∨':'›'">
+        <div class="eng-week-num">${p.week.split('–')[0].replace('第','')}</div>
+        <div class="eng-week-title">${p.week} · ${p.title}</div>
+        <span style="color:var(--muted);font-size:13px">›</span>
+      </div>
+      <div class="eng-week-body">
+        ${p.tasks.map(t=>`<div class="eng-task"><span style="color:var(--primary)">▸</span>${t}</div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════
+// AI 陪练
+// ══════════════════════════════════════
+const GEMINI_KEY = 'AQ.Ab8RN6KWUw2X9-bqNpyHpp6wkBpeIE48NUPU4ODvaEoRG2eYAg';
+const GEMINI_SYSTEM = `You are an English conversation coach helping a Chinese beginner improve their spoken English for daily conversations. Rules: 1) Warm encouraging tone 2) Naturally correct grammar/vocabulary errors by modeling correct form 3) Ask follow-up questions to keep conversation going 4) Keep responses to 3-4 sentences max 5) If user writes Chinese, gently encourage them to try in English first, then help them express it.`;
+
+let chatHistory=[];
+let recognition=null,isRecording=false;
+
+async function sendChat(){
+  const input=document.getElementById('chat-input');
+  const msg=input.value.trim();if(!msg)return;
+  input.value='';
+  document.getElementById('chat-send-btn').disabled=true;
+  const list=document.getElementById('chat-list');
+  list.innerHTML+=`<div class="chat-bubble bubble-user">${msg}</div>`;
+  chatHistory.push({role:'user',parts:[{text:msg}]});
+  const tid='t'+Date.now();
+  list.innerHTML+=`<div class="chat-bubble bubble-ai" id="${tid}"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>`;
+  list.parentElement.scrollTop=list.parentElement.scrollHeight;
+  try{
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        system_instruction:{parts:[{text:GEMINI_SYSTEM}]},
+        contents:chatHistory,
+        generationConfig:{maxOutputTokens:300,temperature:0.8}
+      })
+    });
+    const data=await res.json();
+    const reply=data.candidates?.[0]?.content?.parts?.[0]?.text||"I'm sorry, please try again.";
+    chatHistory.push({role:'model',parts:[{text:reply}]});
+    document.getElementById(tid).innerHTML=reply.replace(/\n/g,'<br>');
+  }catch(e){
+    document.getElementById(tid).innerHTML='⚠️ 网络错误，请检查网络后重试。';
+    console.error('Gemini error:',e);
+  }
+  document.getElementById('chat-send-btn').disabled=false;
+  list.parentElement.scrollTop=list.parentElement.scrollHeight;
+}
+
+function toggleVoice(){
+  if(isRecording){if(recognition)recognition.stop();return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('请在 Safari 中使用语音输入功能');return;}
+  recognition=new SR();recognition.lang='en-US';recognition.continuous=false;recognition.interimResults=true;
+  recognition.onstart=()=>{isRecording=true;document.getElementById('mic-btn').classList.add('recording');document.getElementById('mic-btn').textContent='⏹';document.getElementById('voice-hint').classList.add('show');};
+  recognition.onresult=(e)=>{let t='';for(let i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;document.getElementById('chat-input').value=t;};
+  recognition.onend=()=>{isRecording=false;document.getElementById('mic-btn').classList.remove('recording');document.getElementById('mic-btn').textContent='🎤';document.getElementById('voice-hint').classList.remove('show');const v=document.getElementById('chat-input').value.trim();if(v)sendChat();};
+  recognition.onerror=(e)=>{isRecording=false;document.getElementById('mic-btn').classList.remove('recording');document.getElementById('mic-btn').textContent='🎤';document.getElementById('voice-hint').classList.remove('show');if(e.error==='not-allowed')alert('请允许麦克风权限');};
+  try{recognition.start();}catch(e){}
+}
+
+// ══════════════════════════════════════
+// 朋友排行榜
+// ══════════════════════════════════════
+async function loadLeaderboard(){
+  const d=new Date();
+  const months=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  document.getElementById('lb-month').textContent=d.getFullYear()+'年'+months[d.getMonth()]+'排行榜';
+  document.getElementById('lb-list').innerHTML='<div class="lb-loading">加载中...</div>';
+
+  try{
+    const startOfMonth=new Date(d.getFullYear(),d.getMonth(),1).toISOString().split('T')[0];
+    const {data:checkins,error}=await supa.from('checkins').select('user_id,date').gte('date',startOfMonth);
+    if(error)throw error;
+
+    // 统计每个用户的打卡天数
+    const userDays={};
+    checkins.forEach(c=>{
+      if(!userDays[c.user_id])userDays[c.user_id]=new Set();
+      userDays[c.user_id].add(c.date);
+    });
+
+    // 获取用户信息
+    const userIds=Object.keys(userDays);
+    const {data:profiles}=await supa.from('profiles').select('id,name,email,avatar_url').in('id',userIds);
+
+    // 排序
+    const ranked=userIds.map(id=>{
+      const profile=profiles?.find(p=>p.id===id)||{};
+      return {
+        id,
+        name:profile.name||profile.email?.split('@')[0]||'用户',
+        email:profile.email||'',
+        avatar:profile.avatar_url||null,
+        days:userDays[id].size
+      };
+    }).sort((a,b)=>b.days-a.days);
+
+    renderLeaderboard(ranked);
+  }catch(e){
+    document.getElementById('lb-list').innerHTML='<div class="lb-loading">加载失败，请检查网络</div>';
+  }
+}
+
+function getInitial(name){return(name||'U')[0].toUpperCase();}
+
+function renderLeaderboard(ranked){
+  const myId=currentUser?.id;
+  const myRank=ranked.findIndex(u=>u.id===myId)+1;
+  const me=ranked.find(u=>u.id===myId);
+
+  // 我的位置条
+  if(me){
+    document.getElementById('lb-me-bar').innerHTML=`
+      <div class="lb-me-bar">
+        <div class="lb-me-rank">#${myRank}</div>
+        <div class="lb-me-info">
+          <div class="lb-me-label">我的排名</div>
+          <div class="lb-me-sub">${me.days} 天打卡 · ${me.name}</div>
+        </div>
+        <div style="font-size:20px">${myRank===1?'🥇':myRank===2?'🥈':myRank===3?'🥉':'💪'}</div>
+      </div>`;
+  }
+
+  // 领奖台 Top 3
+  const top3=ranked.slice(0,3);
+  const order=[1,0,2]; // 显示顺序：2nd, 1st, 3rd
+  const heights=[44,60,32];
+  const rankNums=[2,1,3];
+  let podiumHtml='';
+  order.forEach((i,pos)=>{
+    const u=top3[i];if(!u)return;
+    const isMe=u.id===myId;
+    podiumHtml+=`
+      <div class="podium-item rank-${rankNums[pos]}">
+        ${rankNums[pos]===1?'<div class="podium-crown">👑</div>':''}
+        <div class="podium-avatar${isMe?' today-cell':''}">
+          ${u.avatar?`<img src="${u.avatar}">`:`<span>${getInitial(u.name)}</span>`}
+        </div>
+        <div class="podium-name">${u.name}${isMe?' (我)':''}</div>
+        <div class="podium-days">${u.days}天</div>
+        <div class="podium-block">${rankNums[pos]}</div>
+      </div>`;
+  });
+  document.getElementById('lb-podium').innerHTML=podiumHtml;
+
+  // 完整列表
+  const medals=['🥇','🥈','🥉'];
+  document.getElementById('lb-list').innerHTML=ranked.map((u,i)=>{
+    const isMe=u.id===myId;
+    return `
+      <div class="lb-item${isMe?' me':''}">
+        <div class="lb-rank${i<3?' top3':''}">${i<3?medals[i]:i+1}</div>
+        <div class="lb-av">${u.avatar?`<img src="${u.avatar}">`:`<span>${getInitial(u.name)}</span>`}</div>
+        <div class="lb-info">
+          <div class="lb-name">${u.name}${isMe?' <span style="color:var(--primary);font-size:11px">· 我</span>':''}</div>
+          <div class="lb-detail">本月打卡 ${u.days} 天</div>
+        </div>
+        <div class="lb-days">${u.days}<span> 天</span></div>
+      </div>`;
+  }).join('')||'<div class="lb-loading">暂无数据，快去打卡吧！</div>';
+}
+
+// ══════════════════════════════════════
+// 设置
+// ══════════════════════════════════════
+function setRestTime(){
+  const opts=['30秒','45秒','60秒','90秒'];
+  const cur=ls('rest_time','60秒');
+  const next=opts[(opts.indexOf(cur)+1)%opts.length];
+  lsSet('rest_time',next);document.getElementById('set-rest-val').textContent=next;
+  setTimerDur(parseInt(next));
+}
+function clearWeekData(){if(confirm('确定要重置本周打卡记录吗？')){lsSet('wd_fit_'+uid(),{});lsSet('wd_eng_'+uid(),{});lsSet('tt_'+uid(),{});renderHome();alert('已重置');}}
+function clearAllData(){if(confirm('确定要清除全部数据吗？此操作不可恢复！')){localStorage.clear();location.reload();}}
+
+// ══════════════════════════════════════
+// 插件系统
+// ══════════════════════════════════════
+function injectPlugin(){
+  const code=document.getElementById('plugin-input').value.trim();
+  if(!code){alert('请先粘贴插件代码');return;}
+  const output=document.getElementById('plugin-output');
+  const empty=output.querySelector('div[style]');if(empty)empty.remove();
+  const w=document.createElement('div');w.innerHTML=code;
+  w.querySelectorAll('script').forEach(s=>{const ns=document.createElement('script');ns.textContent=s.textContent;document.head.appendChild(ns);});
+  output.appendChild(w);
+  const plugins=ls('plugins',[]);plugins.push(code);lsSet('plugins',plugins);
+  document.getElementById('plugin-input').value='';alert('✅ 插件注入成功！');
+}
+function clearPlugins(){
+  if(confirm('确定要清除所有插件吗？')){lsSet('plugins',[]);document.getElementById('plugin-output').innerHTML='<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">暂无已安装插件</div>';alert('已清除');}}
+function loadSavedPlugins(){
+  const plugins=ls('plugins',[]);if(!plugins.length)return;
+  const output=document.getElementById('plugin-output');output.innerHTML='';
+  plugins.forEach(code=>{const w=document.createElement('div');w.innerHTML=code;w.querySelectorAll('script').forEach(s=>{const ns=document.createElement('script');ns.textContent=s.textContent;document.head.appendChild(ns);});output.appendChild(w);});
+}
+
+// ══════════════════════════════════════
+// 初始化
+// ══════════════════════════════════════
+document.getElementById('auth-screen').classList.remove('hidden');
+initAuth();
+</script>
+</body>
+</html>
